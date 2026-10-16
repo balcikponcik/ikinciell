@@ -1,0 +1,1178 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="İkinci El Kaosu: ikinci el dükkânında tezgâhtar ol, ürünleri incele, pazarlık yap, 10 dakikada en çok kârı elde et.">
+<meta name="theme-color" content="#F2B630">
+<title>İkinci El Kaosu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Baloo+2:wght@500;600;700;800&display=swap">
+<style>
+[hidden]{display:none!important}
+img{max-width:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Layout: dükkân tezgâhı — solda müşteri, ortada ürün ve araçlar, sağda pazarlık ve not defteri; altta envanter rafı. Tek, bilinçli bir karikatür görünümü. */
+:root{
+  --wall:#F2B630; --wall-2:#E7A51E;
+  --ink:#1D2A44; --muted:#56607A;
+  --paper:#FFF8EC; --paper-2:#F5E9CF;
+  --wood:#8A4B2A; --wood-2:#6B371C;
+  --tag:#E8463A; --mint:#2FB383; --sky:#5BB6E8; --plum:#8E6CCF;
+  --display:"Lilita One","Arial Rounded MT Bold","Trebuchet MS",sans-serif;
+  --body:"Baloo 2","Trebuchet MS","Segoe UI",sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{
+  margin:0;background:var(--wall);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.35;
+  background-image:repeating-linear-gradient(90deg,transparent 0 46px,rgba(0,0,0,.045) 46px 92px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+#app{min-height:100%;max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-block:14px;box-sizing:border-box}
+
+/* HUD */
+.hud{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.logo{font-family:var(--display);font-size:26px;line-height:1;letter-spacing:.5px;color:var(--paper);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:3px 3px 0 var(--ink);margin-right:auto}
+.stat{background:var(--paper);border:3px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:4px 12px;display:flex;flex-direction:column;min-width:74px}
+.stat small{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stat b{font-family:var(--display);font-weight:400;font-size:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stat.timer b{font-size:24px}
+.stat.timer.low{background:var(--tag);color:var(--paper)}
+.stat.timer.low small{color:var(--paper)}
+.angry-dots{display:flex;gap:4px;padding-top:4px}
+.angry-dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--ink);background:var(--paper-2)}
+.angry-dots i.on{background:var(--tag)}
+.iconbtn{border:3px solid var(--ink);background:var(--paper);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:8px 10px;font-weight:800}
+.iconbtn[aria-pressed="true"]{background:var(--mint);color:var(--paper)}
+
+/* Shop grid */
+.shop{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.1fr);gap:16px;flex:1}
+.pane{background:var(--paper);border:3px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;position:relative}
+.pane h2{font-family:var(--display);font-weight:400;font-size:18px;margin:0;letter-spacing:.3px}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* Customer pane */
+.cust{background:linear-gradient(var(--paper) 0 70%,var(--wood) 70% 72%,var(--wood-2) 72%);overflow:hidden}
+.custTop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.badge{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--paper);border:2px solid var(--ink);border-radius:999px;padding:1px 10px}
+.bubble{position:relative;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:10px 12px;font-weight:600;min-height:62px;box-shadow:3px 3px 0 var(--ink)}
+.bubble::after{content:"";position:absolute;left:44px;bottom:-14px;width:18px;height:18px;background:#fff;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:rotate(45deg)}
+.faceWrap{position:relative;display:flex;justify-content:center;margin-top:8px}
+#custFace{width:min(210px,70%);aspect-ratio:200/230;max-width:100%}
+#custFace svg{width:100%;height:100%;display:block}
+#custFace.enter{animation:walkin .5s ease-out}
+@keyframes walkin{from{transform:translateX(-60%);opacity:0}to{transform:none;opacity:1}}
+#custFace.leave{animation:walkout .6s ease-in forwards}
+@keyframes walkout{to{transform:translateX(70%);opacity:0}}
+.emoji{position:absolute;right:8%;top:0;font-size:38px;filter:drop-shadow(2px 2px 0 var(--ink));opacity:0;transform:scale(.4)}
+.emoji.pop{animation:pop 1.6s ease-out}
+@keyframes pop{0%{opacity:0;transform:scale(.4) translateY(10px)}15%{opacity:1;transform:scale(1.15)}75%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-14px)}}
+.moodRow{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}
+.moodBar{flex:1;height:16px;border:3px solid var(--ink);border-radius:999px;background:var(--paper-2);overflow:hidden}
+.moodBar i{display:block;height:100%;width:80%;background:var(--mint);transition:width .2s linear,background .3s}
+.queue{display:flex;gap:6px;align-items:flex-end;margin-top:auto;padding-top:6px}
+.queue span{font-size:12px;font-weight:800;color:var(--paper);margin-right:4px}
+.queue .q{width:44px;height:50px}
+.queue .q svg{width:100%;height:100%}
+
+/* Item pane */
+.itemHead{display:flex;gap:12px;align-items:flex-start}
+.itemArt{width:118px;flex:none;aspect-ratio:1;background:var(--paper-2);border:3px solid var(--ink);border-radius:16px;display:grid;place-items:center;max-width:100%}
+.itemArt svg{width:86%;height:86%}
+.itemInfo{min-width:0;display:flex;flex-direction:column;gap:2px}
+.itemInfo h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.1;margin:0;text-wrap:balance}
+.claim{color:var(--muted);font-weight:600}
+.tagPrice{align-self:flex-start;margin-top:6px;position:relative;background:var(--tag);color:var(--paper);border:3px solid var(--ink);border-radius:6px 14px 14px 6px;padding:2px 14px 2px 22px;font-family:var(--display);font-size:22px;box-shadow:3px 3px 0 var(--ink)}
+.tagPrice::before{content:"";position:absolute;left:7px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--paper);border:2px solid var(--ink)}
+.tagPrice small{font-family:var(--body);font-size:11px;font-weight:800;letter-spacing:.06em;display:block;margin-top:-2px;opacity:.9}
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tool{border:3px solid var(--ink);border-radius:14px;background:#fff;box-shadow:3px 3px 0 var(--ink);padding:9px 10px;text-align:left;display:flex;flex-direction:column;gap:0}
+.tool b{font-size:16px;font-weight:800}
+.tool span{font-size:12px;color:var(--muted);font-weight:600}
+.tool:hover:not(:disabled){background:var(--paper-2)}
+.tool:active:not(:disabled),.btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.tool:disabled,.btn:disabled{opacity:.45;cursor:not-allowed}
+.tool.police{background:#E9F1FF}
+.tool.scale{background:#FFF3C9}
+.busy{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}
+.busy .bar{flex:1;height:10px;border:2px solid var(--ink);border-radius:999px;overflow:hidden;background:var(--paper-2)}
+.busy .bar i{display:block;height:100%;background:var(--sky);width:0}
+.prices{margin-top:auto;border-top:3px dashed var(--paper-2);padding-top:8px;font-size:13px;color:var(--muted);font-weight:600}
+.prices b{color:var(--ink)}
+
+/* Deal pane */
+.askLine{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700}
+.askLine b{font-family:var(--display);font-weight:400;font-size:26px;color:var(--tag)}
+.offerRow{display:flex;gap:8px;align-items:center}
+.money{flex:1;min-width:0;display:flex;align-items:center;border:3px solid var(--ink);border-radius:12px;background:#fff;padding:0 10px}
+.money input{border:0;outline:0;background:transparent;width:100%;min-width:0;font-family:var(--display);font-size:24px;padding:4px 0;font-variant-numeric:tabular-nums}
+.money:focus-within{box-shadow:0 0 0 3px var(--sky)}
+.money em{font-style:normal;font-family:var(--display);font-size:20px}
+input[type=range]{width:100%;accent-color:var(--tag)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:2px solid var(--ink);border-radius:999px;background:#fff;padding:2px 10px;font-weight:700;font-size:13px}
+.chip:hover{background:var(--paper-2)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{border:3px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink);padding:8px 10px;font-weight:800;background:#fff}
+.btn.go{background:var(--mint);color:#fff;grid-column:1/-1;font-size:18px;font-family:var(--display);font-weight:400;letter-spacing:.4px}
+.btn.hard{background:var(--tag);color:#fff}
+.btn.big{font-family:var(--display);font-weight:400;font-size:22px;padding:10px 26px;background:var(--mint);color:#fff}
+.notes{flex:1;min-height:120px;background:repeating-linear-gradient(var(--paper) 0 25px,#E9DDC1 25px 26px);border:3px solid var(--ink);border-radius:12px;padding:6px 10px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.note{display:flex;gap:8px;align-items:flex-start;font-size:14px;font-weight:600}
+.note .dot{flex:none;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);margin-top:4px}
+.note.bad .dot{background:var(--tag)}
+.note.good .dot{background:var(--mint)}
+.note.info .dot{background:var(--sky)}
+.note.rare .dot{background:var(--wall)}
+.note > div{min-width:0;flex:1}
+.note button{margin-top:3px;border:2px solid var(--ink);border-radius:8px;background:var(--wall);font-size:12px;font-weight:800;padding:1px 8px}
+.empty{color:var(--muted);font-weight:600;font-size:13px}
+
+/* Inventory */
+.inv{background:var(--wood);border:3px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink);padding:10px 12px;display:flex;gap:10px;align-items:center;overflow-x:auto}
+.inv > b{font-family:var(--display);font-weight:400;color:var(--paper);white-space:nowrap}
+.invItem{flex:none;display:flex;align-items:center;gap:6px;background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:3px 8px 3px 4px;font-size:13px;font-weight:700}
+.invItem svg{width:32px;height:32px}
+.inv .empty{color:var(--paper-2)}
+
+/* Modal */
+.modalWrap{position:fixed;inset:0;background:rgba(29,42,68,.55);display:grid;place-items:center;z-index:30;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal{width:min(620px,100%);max-height:100%;overflow:auto;background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:8px 8px 0 var(--ink);padding:16px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box}
+.mhead{display:flex;align-items:center;gap:10px}
+.mhead h2{font-family:var(--display);font-weight:400;font-size:22px;margin:0;margin-right:auto}
+.mmood{width:110px;height:12px;border:2px solid var(--ink);border-radius:999px;overflow:hidden;background:var(--paper-2)}
+.mmood i{display:block;height:100%;background:var(--mint)}
+.x{border:3px solid var(--ink);background:#fff;border-radius:10px;width:38px;height:38px;font-weight:800;box-shadow:2px 2px 0 var(--ink)}
+.stage{position:relative;aspect-ratio:1;width:min(360px,100%);margin:0 auto;background:radial-gradient(circle,#fff 0 40%,var(--paper-2) 75%);border:3px solid var(--ink);border-radius:18px;overflow:hidden}
+.zoomer{position:absolute;inset:0;transition:transform .2s}
+.zoomer svg{position:absolute;inset:8%;width:84%;height:84%}
+.zoomer .flip{position:absolute;inset:0;animation:flip .35s ease-out}
+@keyframes flip{from{transform:rotateY(90deg)}to{transform:none}}
+.spot{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:3px solid var(--ink);background:var(--wall);font-weight:900;font-size:15px;display:grid;place-items:center;box-shadow:2px 2px 0 var(--ink);animation:pulse 1.4s infinite}
+.spot.small{width:20px;height:20px;margin:-10px 0 0 -10px;font-size:11px}
+.spot.rev{animation:none;background:var(--mint);color:#fff}
+.spot.rev.bad{background:var(--tag)}
+.spot.rev.rare{background:var(--plum)}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(242,182,48,.45),2px 2px 0 var(--ink)}}
+.ctrl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center}
+.ctrl label{display:flex;align-items:center;gap:8px;font-weight:700;flex:1;min-width:180px;max-width:300px}
+.clueBox{background:#fff;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;font-weight:600;min-height:44px}
+.results{display:flex;flex-direction:column;gap:10px}
+.res{background:#fff;border:2px solid var(--ink);border-radius:12px;padding:8px 12px}
+.res .url{font-size:12px;font-weight:700;color:var(--mint);word-break:break-all}
+.res .url.warn{color:var(--tag)}
+.res h4{margin:2px 0;font-size:16px;color:#2350A8}
+.res p{margin:0;font-size:14px}
+.searchbar{display:flex;gap:8px}
+.searchbar div{flex:1;min-width:0;border:3px solid var(--ink);border-radius:999px;background:#fff;padding:6px 14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.report{background:#fff;border:3px solid var(--ink);border-radius:12px;padding:12px;display:grid;gap:4px}
+.report div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--paper-2);padding-bottom:3px}
+.report b{text-align:right}
+.dial{width:min(320px,100%);display:block;margin:0 auto}
+.reading{text-align:center;font-family:var(--display);font-size:34px}
+.center{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+
+/* Screens */
+.screen{position:fixed;inset:0;z-index:40;overflow:auto;background:var(--wall);background-image:repeating-linear-gradient(90deg,transparent 0 46px,rgba(0,0,0,.045) 46px 92px);padding:max(20px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-sizing:border-box}
+.screenIn{max-width:1060px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.title{font-family:var(--display);font-size:clamp(44px,9vw,92px);line-height:.95;margin:0;color:var(--paper);-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:6px 6px 0 var(--ink);transform:rotate(-2deg);text-wrap:balance}
+.dayTag{align-self:flex-start;transform:rotate(2deg)}
+.cols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px}
+.howto ol{margin:0;padding-left:20px;display:grid;gap:6px;font-weight:600}
+.upg{display:flex;flex-direction:column;gap:8px}
+.upgItem{display:flex;gap:10px;align-items:center;justify-content:space-between;border:2px solid var(--ink);border-radius:12px;padding:6px 10px;background:#fff}
+.upgItem div{min-width:0}
+.upgItem b{display:block}
+.upgItem span{font-size:13px;color:var(--muted);font-weight:600}
+.upgItem.own{background:#E3F7EE}
+.vault{font-family:var(--display);font-size:24px}
+.startRow{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.startRow select{border:3px solid var(--ink);border-radius:12px;padding:8px 10px;background:#fff;font-weight:700}
+.tableWrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:2px dashed var(--paper-2);text-align:left;white-space:nowrap}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.r,th.r{text-align:right}
+.pos{color:#17865D;font-weight:800}
+.neg{color:var(--tag);font-weight:800}
+.bigStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.bigStats .stat b{font-size:26px}
+.stars{font-size:40px;letter-spacing:6px;text-align:center}
+.pauseCard{max-width:420px;margin:12vh auto 0;text-align:center}
+
+#toasts{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translateX(-50%);z-index:50;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(520px,90vw)}
+.toast{background:var(--ink);color:var(--paper);border-radius:12px;padding:8px 14px;font-weight:700;box-shadow:3px 3px 0 rgba(0,0,0,.25);animation:tin 3s ease forwards;text-align:center}
+@keyframes tin{0%{opacity:0;transform:translateY(-8px)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+
+@media (max-width:980px){
+  .shop{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .deal{grid-column:1/-1}
+}
+@media (max-width:640px){
+  .shop,.cols{grid-template-columns:minmax(0,1fr)}
+  .logo{font-size:22px;width:100%}
+  .stat{min-width:0;flex:1}
+  .bigStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .itemArt{width:92px}
+  .cust{background:var(--paper)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="hud">
+    <div class="logo">İkinci El Kaosu</div>
+    <div class="stat timer" id="timerBox"><small>Süre</small><b id="timer">10:00</b></div>
+    <div class="stat"><small>Kasa</small><b id="cash" class="num">0 ₺</b></div>
+    <div class="stat"><small>Masraf</small><b id="costs" class="num">0 ₺</b></div>
+    <div class="stat"><small>Puan</small><b id="points">0</b></div>
+    <div class="stat"><small>Sinirlenen</small><div class="angry-dots" id="angryDots"><i></i><i></i><i></i></div></div>
+    <button class="iconbtn" id="musicBtn" data-act="music" aria-pressed="false">♪ Müzik</button>
+    <button class="iconbtn" data-act="pause">❚❚ Mola</button>
+  </header>
+
+  <main class="shop">
+    <section class="pane cust" aria-label="Müşteri">
+      <div class="custTop">
+        <h2 id="custName">Müşteri bekleniyor</h2>
+        <span class="badge" id="custType" hidden>Tip</span>
+      </div>
+      <div class="bubble" id="bubble">Dükkân kapalı.</div>
+      <div class="faceWrap"><div id="custFace"></div><div class="emoji" id="emoji"></div></div>
+      <div class="moodRow"><span>Sabır</span><div class="moodBar"><i id="moodFill"></i></div></div>
+      <div class="queue" id="queue"></div>
+    </section>
+
+    <section class="pane item" aria-label="Ürün">
+      <div class="eyebrow" id="itemCat">Tezgâh</div>
+      <div class="itemHead">
+        <div class="itemArt" id="itemArt"></div>
+        <div class="itemInfo">
+          <h3 id="itemName">Tezgâh boş</h3>
+          <div class="claim" id="itemClaim">Müşteri geldiğinde ürünü buraya koyar.</div>
+          <div class="tagPrice" id="askTag" hidden><small>MÜŞTERİ İSTİYOR</small><span id="askTop">0 ₺</span></div>
+        </div>
+      </div>
+      <div class="tools">
+        <button class="tool" id="tInspect" data-act="inspect"><b>🔍 İncele</b><span>Ücretsiz · zaman alır</span></button>
+        <button class="tool" id="tSearch" data-act="search"><b>🌐 Araştır</b><span>Ücretsiz · sahte sitelere dikkat</span></button>
+        <button class="tool" id="tExpert" data-act="expert"><b>🎓 Uzman çağır</b><span id="expertCostTxt">400 ₺ · kesin bilgi</span></button>
+        <button class="tool scale" id="tScale" data-act="scale" hidden><b>⚖️ Tart</b><span id="scaleCostTxt">50 ₺ · gramajı ölç</span></button>
+        <button class="tool police" id="tPolice" data-act="police" hidden><b>🚓 Polise bildir</b><span>Doğruysa +15 · yanlışsa −10</span></button>
+      </div>
+      <div class="busy" id="busy" hidden><span id="busyTxt">İnceleniyor…</span><div class="bar"><i id="busyBar"></i></div></div>
+      <div class="prices" id="prices"></div>
+    </section>
+
+    <section class="pane deal" aria-label="Pazarlık">
+      <div class="askLine"><h2>Pazarlık</h2><span>İstenen <b id="askVal">—</b></span></div>
+      <div class="offerRow">
+        <label class="money" for="offerIn"><input id="offerIn" type="number" inputmode="numeric" min="0" step="50" value="0" aria-label="Teklifin"><em>₺</em></label>
+      </div>
+      <input type="range" id="offerRange" min="0" max="10000" step="50" value="0" aria-label="Teklif kaydırıcısı">
+      <div class="chips">
+        <button class="chip" data-act="pct" data-p="0.4">%40</button>
+        <button class="chip" data-act="pct" data-p="0.55">%55</button>
+        <button class="chip" data-act="pct" data-p="0.7">%70</button>
+        <button class="chip" data-act="pct" data-p="0.85">%85</button>
+        <button class="chip" data-act="pct" data-p="1">İstediği fiyat</button>
+      </div>
+      <div class="btns">
+        <button class="btn go" id="bOffer" data-act="offer">Teklif ver</button>
+        <button class="btn hard" id="bHard" data-act="hard" title="Riskli: kabul ya da sinir">Son teklifim!</button>
+        <button class="btn" id="bPass" data-act="pass">Almıyorum</button>
+      </div>
+      <div class="eyebrow">Not defteri</div>
+      <div class="notes" id="notes"><div class="empty">İnceleme, araştırma ve uzman bulguların buraya yazılır. Kırmızı bulguları müşteriye gösterip fiyatı düşürebilirsin.</div></div>
+    </section>
+  </main>
+
+  <footer class="inv" id="inv"><b>Bugün alınanlar</b><span class="empty">Henüz bir şey almadın.</span></footer>
+</div>
+
+<div class="modalWrap" id="modalWrap" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="mhead"><h2 id="mTitle">—</h2><div class="mmood" title="Müşterinin sabrı"><i id="mMood"></i></div><button class="x" data-act="closeModal" aria-label="Kapat">✕</button></div>
+    <div class="busy" id="mBusy" hidden><span id="mBusyTxt"></span><div class="bar"><i id="mBusyBar"></i></div></div>
+    <div id="mBody"></div>
+  </div>
+</div>
+
+<div class="screen" id="screen"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+/* ---------- yardımcılar ---------- */
+const $=s=>document.querySelector(s);
+const R=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const ch=p=>Math.random()<p;
+const r50=n=>Math.max(50,Math.round(n/50)*50);
+const fmt=n=>Math.round(n).toLocaleString('tr-TR')+' ₺';
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const INK='#1D2A44';
+
+/* ---------- kalıcı kayıt ---------- */
+const SAVE='ikinciElKaosu.v1';
+let P={day:1,vault:0,best:0,up:{}};
+try{const s=JSON.parse(localStorage.getItem(SAVE)||'null');if(s)P=Object.assign(P,s)}catch(e){}
+function save(){try{localStorage.setItem(SAVE,JSON.stringify(P))}catch(e){}}
+
+const UPG=[
+ {id:'net',name:'Fiber İnternet',desc:'Araştırma 3 sn yerine 1,2 sn sürer.',cost:15000},
+ {id:'buyutec',name:'Kuyumcu Büyüteci',desc:'Detay inceleme 1,6 sn yerine 0,6 sn.',cost:12000},
+ {id:'uzman',name:'Anlaşmalı Eksper',desc:'Uzman 200 ₺’ye, 1,5 sn’de gelir.',cost:25000},
+ {id:'terazi',name:'Hassas Terazi',desc:'Geniş yeşil bölge, yarı hata payı, tartı 20 ₺.',cost:18000},
+ {id:'cay',name:'Çay Ocağı',desc:'Müşteriler %30 daha sabırlı bekler.',cost:20000},
+];
+const up=id=>!!P.up[id];
+const T={
+ research:()=>up('net')?1.2:3, inspect:()=>up('buyutec')?.6:1.6,
+ expertCost:()=>up('uzman')?200:400, expertTime:()=>up('uzman')?1.5:4,
+ scaleCost:()=>up('terazi')?20:50, zone:()=>up('terazi')?11:6, err:()=>up('terazi')?.12:.3
+};
+
+/* ---------- müşteri tipleri ---------- */
+const TYPES={
+ sabirli:{label:'Sabırlı',decay:.35,sens:35,minF:.72,start:88,color:'#2FB383',w:.25,
+   greet:['Merhaba evladım, acelem yok.','Selamünaleyküm, bir bakıver şuna.']},
+ sinirli:{label:'Sinirli',decay:1.05,sens:90,minF:.85,start:66,color:'#E8463A',w:.2,
+   greet:['Hadi çabuk olalım, işim var!','Uzatmayalım kardeşim.']},
+ pazarlikci:{label:'Pazarlıkçı',decay:.55,sens:25,minF:.62,start:82,color:'#5BB6E8',w:.25,
+   greet:['Selam usta! Pazarlığa hazır mısın?','Bak, iyi mal getirdim, ama konuşuruz.']},
+ bilgili:{label:'Bilgili',decay:.7,sens:60,minF:.9,start:80,color:'#8E6CCF',w:.15,
+   greet:['İyi günler. Piyasayı biliyorum, ona göre konuşalım.','Fiyatını araştırdım, boşuna uğraşmayalım.']},
+ supheci:{label:'Şüpheci',decay:.8,sens:30,minF:.5,start:76,color:'#56607A',w:.15,
+   greet:['Şşt… Hızlıca nakit lazım.','Merhaba… Çabuk bitirsek?']},
+};
+const LINES={
+ counter:['Olmaz, {a} altına vermem.','Biraz daha çık, {a} diyelim.','Az daha yaklaş: {a}.'],
+ insult:['Dalga mı geçiyorsun? {a}!','Bu teklif ayıp ama. {a} derim.','Hadi canım! {a}, son.'],
+ haggle:['Hmm, olur gibi… Ama {a} yapalım, aramızda kalsın.','Yaklaştık! {a} ve el sıkışalım.'],
+ accept:['Anlaştık, hayırlı olsun!','Tamam, senin olsun.','Eh, peki. Güle güle kullan.'],
+ leave:['Bu ne rezillik! Bir daha gelmem!','Vaktimi çaldın, hoşça kal!','Pöh! Karşıdaki dükkâna giderim.'],
+ pass:['Peki, başka yere giderim.','Kısmet değilmiş.'],
+ defect:['Hmm… bunu görmemiştim. Tamam, biraz inerim.','Ah, öyle mi? Peki, fiyatı kırayım.'],
+ defectKnow:['Onu zaten fiyata kattım ama… azıcık inerim.'],
+};
+const fill=(s,a)=>s.replace('{a}',fmt(a));
+
+/* ---------- ürün kataloğu ---------- */
+const EL_STOLEN=[[0,'Kilit ekranında "Bu cihaz kayıp olarak işaretlendi" yazıyor!'],[2,'Seri numarası etiketi kazınmış!']];
+const EL_INNOC=[[2,'Faturadaki seri numarası cihazla birebir aynı.']];
+const CATS={
+ elektronik:{label:'Elektronik',kinds:[
+  {icon:'phone',items:[['NovaPhone 13',22000],['NovaPhone 15 Pro',48000],['Galaksa S21',16000],['Pixelon 7',12000],['Mira Note 12',8000]],
+   variant:()=>pick([['64 GB',.85],['128 GB',1],['256 GB',1.12],['512 GB',1.25]]),
+   spots:[['Ekran',50,40],['Tuşlar & çerçeve',68,62]],back:'IMEI etiketi',
+   good:['Ekran temiz, ölü piksel yok.','Çerçevede ufak sürtmeler var, normal kullanım.','IMEI etiketi okunuyor, kutudakiyle aynı.'],
+   broken:[[0,'Ekranın altında ölü piksel şeridi var, dokunmatik yarım çalışıyor.'],[1,'Güç tuşu gömülmüş, cihaz kendi kendine yeniden başlıyor.']],
+   fake:[[1,'Tuş boşlukları fazla, çerçeve plastik gibi hafif.'],[2,'Seri numarası resmi formata uymuyor, harf eksik.']],
+   stolen:EL_STOLEN,innocent:EL_INNOC,rare:[[2,'Arkada "Lansman Serisi 042/500" gravürü var!']],
+   brokenP:.22,fakeP:.12,colors:['#5BB6E8','#E3C26A','#D9A6A0','#7FB7A4','#C9CED6'],tip:'klon telefonlarda tuş boşlukları ve seri no formatı ele veriyor'},
+  {icon:'tablet',items:[['Kuantum Tab 10',14000],['NovaPad Air',26000],['Galaksa Tab S8',18000]],
+   variant:()=>pick([['Wi-Fi 64 GB',.9],['Wi-Fi 256 GB',1.1],['Hücresel 128 GB',1.2]]),
+   spots:[['Ekran',50,45],['Kenarlar',86,72]],back:'Seri no',
+   good:['Ekranda çizik yok.','Kenarlarda küçük bir ezik var, kozmetik.','Seri no okunaklı.'],
+   broken:[[0,'Ekran köşeden çatlak, örümcek ağı gibi yayılmış.'],[1,'Şarj soketi oksitlenmiş, sıvı teması izi.']],
+   fake:[[1,'Kenar hoparlör delikleri asimetrik, klon cihaz.'],[2,'Seri no sorgu formatına uymuyor.']],
+   stolen:EL_STOLEN,innocent:EL_INNOC,rare:[[2,'Arka kapakta geliştirici sürümü yazıyor, koleksiyonluk!']],
+   brokenP:.22,fakeP:.08,colors:['#C9CED6','#5BB6E8','#E3C26A'],tip:'hoparlör deliklerinin simetrisine bakın'},
+  {icon:'console',items:[['OyunKutusu 5',21000],['OyunKutusu 4 Slim',8000],['Switchy Lite',7000]],
+   variant:()=>pick([['tek kol',1],['iki kol + 3 oyun',1.2],['kutusuz',.85]]),
+   spots:[['Kasa',72,42],['Kol girişi',29,50]],back:'Seri no etiketi',
+   good:['Kasa temiz, fan sessiz çalışıyor.','Kol girişleri sağlam.','Etiket orijinal, garanti mührü yerinde.'],
+   broken:[[0,'Fan uçak gibi ses çıkarıyor, disk okumuyor.'],[1,'Kol girişi gevşek, analog çubuk kendi kendine kayıyor.']],
+   fake:[[0,'Kasada logonun bir harfi eksik — klon konsol.'],[2,'Garanti mührü yok, vida başları yalanmış.']],
+   stolen:EL_STOLEN,innocent:EL_INNOC,rare:[[2,'Etikette "Lansman Özel Sürüm" yazıyor!']],
+   brokenP:.25,fakeP:.08,colors:['#FFF8EC','#2E3A59','#E8463A'],tip:'klon konsollarda logo harfleri ve garanti mührü farklı'},
+  {icon:'laptop',items:[['UltraBook 14',35000],['ProKitap M2',52000],['Oyuncu Canavarı 15',45000]],
+   variant:()=>pick([['8 GB RAM',.85],['16 GB RAM',1],['32 GB RAM',1.2]]),
+   spots:[['Ekran',50,40],['Klavye',50,73]],back:'Alt kapak',
+   good:['Ekran parlak, ölü piksel yok.','Klavye tuşları eşit basıyor.','Alt kapaktaki seri no okunuyor.'],
+   broken:[[0,'Ekran menteşesi kırık, ekran sallanıyor.'],[1,'Klavyede sıvı lekesi, bazı tuşlar çalışmıyor.']],
+   fake:[[1,'Klavye harfleri yamuk basılmış, kopya kasa.'],[2,'Alt kapak etiketi fotokopi gibi bulanık.']],
+   stolen:[[0,'Açılışta "Bu cihaz kilitli, sahibine başvurun" ekranı çıkıyor!'],[2,'Alt kapakta başka bir şirketin envanter etiketi var!']],
+   innocent:[[2,'Fatura ve alt kapaktaki seri no eşleşiyor.']],rare:[[2,'Alt kapakta imzalı sınırlı seri plakası var!']],
+   brokenP:.2,fakeP:.06,colors:['#C9CED6','#5BB6E8','#2E3A59'],tip:'etiket baskısının netliğine bakın'},
+ ]},
+ ev:{label:'Ev Eşyası',kinds:[
+  {icon:'coffee',items:[['Barista Pro espresso makinesi',9000],['Filtre kahve makinesi',2500],['Kapsüllü kahve makinesi',3500]],
+   variant:()=>pick([['kutulu',1],['kutusuz',.85],['garantisi devam ediyor',1.12]]),
+   spots:[['Kontrol paneli',40,26],['Kahve çıkışı',50,72]],back:'Üretim etiketi',
+   good:['Panel düğmeleri çalışıyor.','Çıkış temiz, kireç yok.','Üretim etiketi orijinal, 2024.'],
+   broken:[[0,'Panel ışıkları yanıp sönüyor, ısıtıcı hata veriyor.'],[1,'İçeride kireç tabakası, pompa boğuk ses çıkarıyor.']],
+   brokenP:.32,colors:['#C9CED6','#E8463A','#2E3A59']},
+  {icon:'vacuum',items:[['Robot süpürge R7',11000],['Robot süpürge Mini',5000]],
+   variant:()=>pick([['şarj istasyonlu',1],['istasyonsuz',.75]]),
+   spots:[['Lazer sensör',50,30],['Gövde & fırçalar',82,70]],back:'Batarya kapağı',
+   good:['Sensör dönüyor, kalibrasyon tamam.','Fırçalar yeni gibi.','Batarya düzgün, şişme yok.'],
+   broken:[[0,'Lazer sensör dönmüyor, cihaz duvara çarpıyor.'],[2,'Batarya şişmiş! Kapak kabarmış.']],
+   brokenP:.3,colors:['#FFF8EC','#2E3A59','#C9CED6']},
+  {icon:'mixer',items:[['Stand mikser 1000W',6000],['Profesyonel hamur mikseri',9500]],
+   variant:()=>pick([['tüm aparatlarıyla',1.1],['aparat eksik',.8]]),
+   spots:[['Kase',60,70],['Motor başlığı',72,24]],back:'Etiket',
+   good:['Kase çizik değil.','Motor sessiz ve güçlü.','Etiket orijinal.'],
+   broken:[[1,'Motor yanık kokuyor, devir düşüyor.'],[0,'Kasenin kilit mekanizması kırık.']],
+   brokenP:.28,colors:['#E8463A','#5BB6E8','#7FB7A4']},
+  {icon:'airfryer',items:[['Airfryer XL 5,5 L',4000],['Çift hazneli airfryer',6500]],
+   variant:()=>pick([['az kullanılmış',1],['yoğun kullanılmış',.75]]),
+   spots:[['Dijital ekran',50,32],['Sepet',50,66]],back:'Etiket',
+   good:['Ekran ve düğmeler çalışıyor.','Sepetin kaplaması sağlam.','Etiket ve garanti belgesi var.'],
+   broken:[[0,'Rezistans ısınmıyor, ekran hata kodu veriyor.'],[1,'Sepetin yapışmaz kaplaması soyulmuş.']],
+   brokenP:.3,colors:['#2E3A59','#FFF8EC']},
+ ]},
+ giyim:{label:'Giyim',kinds:[
+  {icon:'bag',items:[['Lüks deri el çantası',30000],['Tasarım omuz çantası',18000]],
+   variant:()=>pick([['siyah',1],['taba',1],['bordo',.95]]),
+   spots:[['Logo & kilit',50,55],['Dikişler',20,80]],back:'İç etiket',
+   good:['Logo metali ağır ve net.','Dikişler eşit aralıklı, düzgün.','İç etikette kabartma seri numarası var.'],
+   fake:[[1,'Dikişler eğri, adım aralıkları farklı.'],[2,'İç etiketteki seri no basılmış değil, yapıştırma.']],
+   broken:[[0,'Kilit mekanizması kırık.'],[1,'Sapın derisi çatlamış.']],
+   rare:[[2,'İç etikette "Atölye Sınırlı Seri 007" yazıyor!']],
+   brokenP:.12,brokenF:.55,fakeP:.38,colors:['#2E1F1A','#A0522D','#7A1F2B'],tip:'iç etiketteki seri numarası kabartma olmalı, dikiş aralıklarını sayın'},
+  {icon:'shoe',items:[['Sınırlı seri basketbol ayakkabısı',14000],['Retro koşu ayakkabısı',7000]],
+   variant:()=>{const n=40+Math.floor(Math.random()*6);return [n+' numara',1]},
+   spots:[['Yan logo',56,58],['Taban',30,73]],back:'Dil etiketi',
+   good:['Yan logo düzgün dikilmiş.','Taban az aşınmış.','Dil etiketinde üretim tarihi ve kod var.'],
+   fake:[[0,'Yan logonun kenarları tırtıklı, yapıştırma.'],[2,'Dil etiketinde üretim tarihi yok.']],
+   broken:[[1,'Taban ayrılmış, yapıştırılmış.']],
+   rare:[[2,'Dil etiketinde "Numune — satışa kapalı" yazıyor!']],
+   brokenP:.15,brokenF:.45,fakeP:.33,colors:['#E8463A','#5BB6E8','#FFF8EC','#2FB383'],tip:'dil etiketindeki üretim tarihi kontrol edin'},
+  {icon:'jacket',items:[['Vintage deri ceket',6000],['Kaşe palto',4500]],
+   variant:()=>pick([['M beden',1],['L beden',1],['XL beden',.95]]),
+   spots:[['Fermuar',50,62],['Yüzey',22,52]],back:'İç etiket',
+   good:['Fermuar metal ve akıcı.','Gerçek deri, doğal kokusu var.','İç etiket orijinal.'],
+   fake:[[1,'Deri değil, suni deri; doku plastik gibi.'],[2,'İç etiketteki marka adı yanlış yazılmış.']],
+   broken:[[0,'Fermuar kırık.'],[1,'Kolda güve deliği var.']],
+   brokenP:.18,brokenF:.5,fakeP:.25,colors:['#3A2418','#5A3A22','#2E3A59'],tip:'deri kokusu ve doku belirleyici'},
+ ]},
+ paralar:{label:'Tarihi Paralar',kinds:[
+  {icon:'coin',items:[['Osmanlı gümüş mecidiye',3500],['Cumhuriyet ilk dönem hatıra parası',1500],['Antik Roma bronz sikke',4000],['1950’ler bakır 25 kuruş',800]],
+   variant:()=>pick([['Çok iyi (VF)',.7],['Çok çok iyi (XF)',1],['Çil (UNC)',1.6]]),
+   spots:[['Ön yüz',38,40],['Kenar dişleri',86,58]],back:'Arka yüz & yıl',backPos:[50,62],
+   good:['Ön yüz kabartması keskin.','Kenar dişleri düzenli, darp izleri doğal.','Yıl ve darphane işareti net.'],
+   fake:[[1,'Kenar dişleri düzensiz, döküm izi var.'],[0,'Yazıların kenarı yumuşak — döküm replika.']],
+   broken:[[0,'Agresif temizlenmiş, parlatılmış; koleksiyon değeri düşük.']],
+   rare:[[2,'Hatalı basım! Yıl rakamı çift basılmış, koleksiyoncular peşinde.']],
+   brokenP:.18,brokenF:.35,fakeP:.25,colors:['#C9CED6','#C97A43','#D7A84A'],tip:'replikaların kenar dişleri düzensiz olur'},
+ ]},
+ antika:{label:'Antika',kinds:[
+  {icon:'watch',items:[['Gümüş cep saati (1910’lar)',18000],['Pirinç masa saati',6000]],
+   variant:()=>pick([['çalışır durumda',1],['kurulmamış',.9]]),
+   spots:[['Kadran',50,60],['Kurma kolu',50,21]],back:'Kapak içi damga',
+   good:['Kadran el boyaması, dönemine uygun.','Kurma kolu orijinal.','Kapak içinde dönem ayar damgası var.'],
+   fake:[[0,'Kadran baskısı modern; ofset noktalar görünüyor.'],[2,'Damga yerine "Made in" etiketi izi — reprodüksiyon.']],
+   broken:[[1,'Mekanizma çalışmıyor, zemberek kopuk.']],
+   rare:[[2,'Kapak içinde ünlü bir saat ustasının imzası var!']],
+   brokenP:.18,brokenF:.45,fakeP:.3,colors:['#C9CED6','#D7A84A'],tip:'reprodüksiyonlarda kapak içinde etiket izi olur'},
+  {icon:'vase',items:[['El boyaması porselen vazo',5000],['Porselen biblo',3500]],
+   variant:()=>pick([['tekli',1],['çift takım',1.6]]),
+   spots:[['Desen',52,62],['Ağız kısmı',50,17]],back:'Taban damgası',
+   good:['Fırça izleri belirgin, el boyaması.','Ağızda çatlak yok.','Taban damgası el yazısı, dönemine uygun.'],
+   fake:[[0,'Desen çıkartma, hiç fırça izi yok.'],[2,'Taban damgası lazerle basılmış.']],
+   broken:[[1,'Ağızda yapıştırılmış bir çatlak var.']],
+   rare:[[2,'Taban damgası ünlü bir saray atölyesine ait!']],
+   brokenP:.2,brokenF:.4,fakeP:.35,colors:['#5BB6E8','#FFF8EC','#7FB7A4'],tip:'lazer damga ve çıkartma desen = kopya'},
+  {icon:'ewer',items:[['Bakır ibrik (19. yy)',7000],['Bakır sahan takımı',4500]],
+   variant:()=>pick([['kalaylı',1.05],['kalaysız',.95]]),
+   spots:[['Gövde',50,62],['Emzik',86,20]],back:'Taban',
+   good:['Dövme işçiliği, çekiç izleri düzensiz ve doğal.','Emzik ayrı parça, perçinli.','Tabanda usta kazıması var.'],
+   fake:[[0,'Patina boyayla yapılmış, tırnakla kazınınca çıkıyor.'],[2,'Tabanda makine presi izleri.']],
+   broken:[[0,'Gövdede delik var, kalaysız lehim.']],
+   brokenP:.18,brokenF:.45,fakeP:.3,colors:['#C97A43'],tip:'boya patina kazınınca çıkar'},
+  {icon:'lamp',items:[['Pirinç gaz lambası',2500],['Opalin gaz lambası',4200]],
+   variant:()=>pick([['camı orijinal',1],['camı sonradan',.7]]),
+   spots:[['Cam',50,38],['Kaide',50,86]],back:'Fitil mekanizması',
+   good:['Cam üflemeli, hava kabarcıkları var.','Kaide ağır döküm.','Fitil mekanizması dönemine uygun.'],
+   fake:[[0,'Cam kalıp üretimi, kabarcık yok.'],[2,'Fitil mekanizması plastik vidalı.']],
+   broken:[[0,'Camda çatlak var.']],
+   brokenP:.2,brokenF:.5,fakeP:.3,colors:['#D7A84A','#7FB7A4'],tip:'üflemeli camda kabarcık olur'},
+ ]},
+ degerli:{label:'Altın, Gümüş, Pırlanta',kinds:[
+  {icon:'bracelet',items:[['Altın bilezik']],metal:{type:'gold',pur:[['22 ayar',.916]],g:[8,22]},
+   spots:[['Ayar damgası',50,30],['Yüzey & renk',14,52]],back:'İç yüzey',fakeP:.2,colors:['#E3B341']},
+  {icon:'necklace',items:[['Altın zincir kolye']],metal:{type:'gold',pur:[['14 ayar',.585],['18 ayar',.75]],g:[4,14]},
+   spots:[['Kilit & damga',50,72],['Zincir yüzeyi',28,36]],back:'Kilit içi',fakeP:.2,colors:['#E3B341']},
+  {icon:'band',items:[['Altın yüzük']],metal:{type:'gold',pur:[['18 ayar',.75],['22 ayar',.916]],g:[3,8]},
+   spots:[['Ayar damgası',26,60],['Yüzey & renk',74,60]],back:'İç yüzey',fakeP:.2,colors:['#E3B341']},
+  {icon:'necklace',items:[['Gümüş kolye']],metal:{type:'silver',pur:[['925 ayar',.925]],g:[15,60]},
+   spots:[['Kilit & damga',50,72],['Zincir yüzeyi',28,36]],back:'Kilit içi',fakeP:.2,colors:['#C9CED6']},
+  {icon:'ring',items:[['Pırlanta tektaş yüzük']],metal:{type:'diamond',pur:[['14 ayar altın montür',.585]],g:[.2,.9]},
+   spots:[['Taş',50,30],['Yuva & halka',24,64]],back:'İç yüzey damgası',fakeP:.28,colors:['#E3B341']},
+ ]},
+};
+function unlocked(){const d=P.day;const c=['elektronik','ev','giyim','degerli'];if(d>=2)c.push('paralar');if(d>=3)c.push('antika');return c}
+const NEXT_UNLOCK={1:'Yarın: Tarihi Paralar açılıyor.',2:'Yarın: Antika açılıyor.'};
+
+/* ---------- durum ---------- */
+let S=null, M=null, busy=null, PR={};
+function newState(sec){
+  PR={gold:Math.round(R(2900,3300)),silver:Math.round(R(38,46))};
+  return {running:false,paused:false,timeLeft:sec,total:sec,cash:100000,startCash:100000,costs:0,points:0,angry:0,
+    inv:[],cust:null,queue:[],used:new Set(),gap:0,sat:[],log:[],day:P.day,police:{ok:0,bad:0},declined:0,elapsed:0};
+}
+
+/* ---------- ürün üretimi ---------- */
+function genItem(catKey,opts={}){
+  const cat=CATS[catKey];
+  for(let t=0;t<60;t++){
+    const k=pick(cat.kinds), it=pick(k.items);
+    if(k.metal){const m=genMetal(catKey,k,it,opts);if(S.used.has(m.key))continue;S.used.add(m.key);return m}
+    const v=k.variant?k.variant():['',1];
+    const key=it[0]+'|'+v[0];
+    if(S.used.has(key))continue;S.used.add(key);
+    const fb=Math.min(.15,(S.day-1)*.04);
+    const market=r50(it[1]*v[1]*R(.95,1.05));
+    let fake=!!k.fakeP&&ch(k.fakeP+fb);
+    let stolen=!!opts.suspicious&&ch(.6);
+    if(stolen)fake=false;
+    let broken=!fake&&!stolen&&ch((k.brokenP||0)+fb*.5);
+    const rareP=.06+.02*S.day+(catKey==='paralar'||catKey==='antika'?.05:0);
+    let rare=!fake&&!broken&&!stolen&&!!k.rare&&ch(rareP);
+    let value=market;
+    if(broken)value*=k.brokenF||.3;
+    if(fake)value*=.1;
+    if(rare)value*=R(3,5);
+    const spots=k.spots.map(s=>({label:s[0],x:s[1],y:s[2],small:false}));
+    const bp=k.backPos||[50,68];
+    spots.push({label:k.back,x:bp[0],y:bp[1],small:true});
+    spots.forEach((s,i)=>{s.text=k.good[i];s.kind='good';s.rev=false});
+    const apply=(arr,kind)=>(arr||[]).forEach(([i,txt])=>{spots[i].text=txt;spots[i].kind=kind});
+    if(broken)apply(k.broken,'bad');
+    if(fake)apply(k.fake,'bad');
+    if(stolen)apply(k.stolen,'bad');else if(opts.suspicious)apply(k.innocent,'good');
+    if(rare)apply(k.rare,'rare');
+    return {key,cat:catKey,catLabel:cat.label,icon:k.icon,color:pick(k.colors||['#5BB6E8']),name:it[0],variant:v[0],
+      market,value:r50(value),fake,broken,stolen,rare,spots,search:it[0]+(v[0]?' '+v[0]:''),tip:k.tip,electronic:catKey==='elektronik'};
+  }
+  return genItem('ev',opts);
+}
+function metalValue(type,amt,pur){
+  if(type==='gold')return amt*pur*PR.gold*.97;
+  if(type==='silver')return amt*pur*PR.silver*.9;
+  return amt*(35000+50000*amt)+3*.585*PR.gold*.97;
+}
+function genMetal(catKey,k,it,opts){
+  const m=k.metal, [kl,pur]=pick(m.pur);
+  const dia=m.type==='diamond';
+  const amt=+R(m.g[0],m.g[1]).toFixed(dia?2:1);
+  const claimed=opts.honest?amt:+(amt*(ch(.6)?R(1.06,1.22):1)).toFixed(dia?2:1);
+  const fb=Math.min(.12,(S.day-1)*.03);
+  const fake=ch(k.fakeP+fb);
+  let value=fake?(dia?3*.585*PR.gold*.97:amt*(m.type==='silver'?3:15)):metalValue(m.type,amt,pur);
+  const rare=!fake&&ch(.05+.015*S.day);
+  if(rare)value*=R(1.6,2.2);
+  const market=r50(metalValue(m.type,claimed,pur));
+  const unit=dia?'ct':'g';
+  const sp=k.spots.map(s=>({label:s[0],x:s[1],y:s[2],small:false}));
+  sp.push({label:k.back,x:50,y:68,small:true});
+  const goodT=dia?['Taş ışığı beyaz ve canlı kırıyor; içinde küçük doğal inklüzyon var.','Yuva sağlam, tırnaklar yerinde.',`İç yüzeyde ${kl.split(' ')[0]} ayar damgası net.`]
+    :[`Damga net: ${m.type==='silver'?'925':kl}.`,'Renk homojen, aşınma doğal.','İç yüzeyde üretici damgası var.'];
+  sp.forEach((s,i)=>{s.text=goodT[i];s.kind='good';s.rev=false});
+  if(fake){
+    if(dia){sp[0].text='Taş aşırı renkli ışık saçıyor ve kolay çizildi: zirkon belirtisi!';sp[0].kind='bad';sp[2].text='İç yüzeyde küçük "CZ" ibaresi var!';sp[2].kind='bad'}
+    else{sp[0].text='Damga silik ve yamuk basılmış.';sp[0].kind='bad';sp[1].text='Kenarlarda kaplama atmış, altından bakır rengi görünüyor!';sp[1].kind='bad'}
+  }
+  if(rare){sp[2].text='İç yüzeyde ünlü bir ustanın imzası: el işi koleksiyon parçası!';sp[2].kind='rare'}
+  const name=it[0];
+  return {key:name+'|'+claimed,cat:catKey,catLabel:'Değerli Metal',icon:k.icon,color:pick(k.colors),name,
+    variant:`${String(claimed).replace('.',',')} ${unit} · ${kl}`,market,value:r50(value),fake,broken:false,stolen:false,rare,spots:sp,
+    metal:{type:m.type,amt,claimed,pur,kl,unit},
+    search:dia?'pırlanta karat fiyatı':(m.type==='silver'?'gümüş gram fiyatı':kl+' altın gram fiyatı'),
+    tip:dia?'zirkon taş ışığı gökkuşağı gibi aşırı saçar':'kaplama ürünlerde damga silik olur, kenarlarda renk atar'};
+}
+
+/* ---------- müşteri üretimi ---------- */
+const NAMES=[['Ayşe Teyze','f'],['Hüseyin Abi','m'],['Selin','f'],['Mehmet Usta','m'],['Zeynep Hanım','f'],['Kemal Bey','m'],['Deniz','f'],['Emre','m'],['Fatma Abla','f'],['Burak','m'],['Gülsüm Nine','f'],['Oğuz','m'],['Elif','f'],['Cengiz Bey','m'],['Hakan','m'],['Nesrin Hanım','f'],['Tolga','m'],['Pınar','f'],['Recep Dayı','m'],['Merve','f'],['Sinan','m'],['Ece','f']];
+const SKINS=['#F5CBA7','#E8B48A','#C68A5A','#8D5B3B','#FAD9C1'];
+const HAIRC=['#2B1D14','#5A3A22','#A0522D','#D9C27A','#8E8E8E','#C0C0C0'];
+const SCARF=['#8E6CCF','#2FB383','#E8463A','#5BB6E8','#F28C28'];
+const SHIRT=['#5BB6E8','#E8463A','#2FB383','#8E6CCF','#F28C28','#3C5A99','#E3C26A'];
+function wtype(){let r=Math.random(),acc=0;for(const k in TYPES){acc+=TYPES[k].w;if(r<acc)return k}return 'sabirli'}
+function newCustomer(){
+  const type=wtype();
+  const catKey=type==='supheci'?'elektronik':pick(unlocked());
+  const item=genItem(catKey,{suspicious:type==='supheci',honest:type==='bilgili'});
+  let belief;
+  if(type==='bilgili')belief=item.value*R(.95,1.08);
+  else if(type==='supheci')belief=item.market*(item.stolen?R(.4,.6):R(.65,.85));
+  else if(item.metal)belief=item.market*R(.92,1.05);
+  else belief=item.market*R(.75,1.15);
+  const ask=r50(belief*R(1.15,1.4));
+  const [name,g]=pick(NAMES.filter(n=>!S.queue.some(q=>q.name===n[0])&&!(S.cust&&S.cust.name===n[0])));
+  const old=/Teyze|Nine|Dayı|Bey|Hanım|Usta/.test(name);
+  let hair;
+  if(g==='f')hair=pick(old?['scarf','bun','scarf']:['long','bun','long','short']);
+  else hair=pick(old?['bald','short','cap']:['short','cap','short']);
+  const face={skin:pick(SKINS),hc:hair==='scarf'?pick(SCARF):old?pick(HAIRC.slice(3)):pick(HAIRC.slice(0,4)),
+    hair,shirt:pick(SHIRT),stache:g==='m'&&ch(.5),glasses:ch(.3),cap:pick(SCARF)};
+  const t=TYPES[type];
+  return {type,name,item,ask,min:belief*t.minF,mood:t.start*(type==='sinirli'?1:R(.95,1.05)),rounds:0,shown:{},notes:[],
+    state:'active',leaveIn:0,face,research:null,expert:null,scale:null,bucket:-1};
+}
+function openingLine(c){
+  const t=TYPES[c.type], it=c.item;
+  let s=pick(t.greet)+' ';
+  if(it.metal)s+=`${it.name} getirdim, ${String(it.metal.claimed).replace('.',',')} ${it.metal.unit}, ${it.metal.kl}. ${fmt(c.ask)} istiyorum.`;
+  else s+=`${it.name}${it.variant?' ('+it.variant+')':''}. ${fmt(c.ask)} istiyorum.`;
+  if(c.type==='supheci'){
+    s+=' '+(it.stolen?pick(['Şifresi mi? Yok… arkadaşımındı, verdi bana.','Faturası yok abi, kutusu da kayboldu. Nakit lazım.','Şifreyi… unuttum. Çabuk olsak?'])
+      :pick(['Rahmetli babamın, şifresini bilmiyoruz. Faturası yanımda.','Eski cihazım, şifreyi unuttum ama kutusu ve faturası duruyor.']));
+  }
+  return s;
+}
+
+/* ---------- SVG çizimleri ---------- */
+function faceSVG(f,mood){
+  const happy=mood>=60, mad=mood<30, sk=`stroke="${INK}" stroke-width="4"`;
+  const mouth=happy?`<path d="M80 130 Q100 152 120 130Z" fill="#fff" ${sk} stroke-linejoin="round"/>`
+    :mad?`<path d="M80 142 Q100 124 120 142" fill="none" ${sk} stroke-width="5" stroke-linecap="round"/>`
+    :`<path d="M84 137 L116 135" fill="none" ${sk} stroke-width="5" stroke-linecap="round"/>`;
+  const bl=mad?'M64 84 L90 95':happy?'M66 90 Q78 80 90 88':'M66 90 L90 89';
+  const br=mad?'M136 84 L110 95':happy?'M134 90 Q122 80 110 88':'M134 90 L110 89';
+  const fringe=`<path d="M38 102 Q34 36 100 34 Q166 36 162 102 Q156 62 100 60 Q46 62 38 102Z" fill="${f.hc}" ${sk}/>`;
+  let back='',front='',ears=true;
+  if(f.hair==='scarf'){ears=false;back=`<path d="M26 122 Q22 26 100 24 Q178 26 174 122 Q180 196 100 200 Q20 196 26 122Z" fill="${f.hc}" ${sk}/>`;
+    front=`<path d="M40 104 Q42 46 100 44 Q158 46 160 104 Q150 68 100 66 Q50 68 40 104Z" fill="${f.hc}" ${sk}/><circle cx="62" cy="64" r="5" fill="#fff" opacity=".6"/><circle cx="138" cy="64" r="5" fill="#fff" opacity=".6"/>`}
+  else if(f.hair==='bun'){back=`<circle cx="100" cy="30" r="20" fill="${f.hc}" ${sk}/>`;front=fringe}
+  else if(f.hair==='long'){back=`<path d="M34 104 Q28 32 100 30 Q172 32 166 104 L172 186 Q144 178 140 156 L60 156 Q56 178 28 186Z" fill="${f.hc}" ${sk}/>`;front=fringe}
+  else if(f.hair==='bald'){front=`<ellipse cx="42" cy="98" rx="8" ry="16" fill="${f.hc}" ${sk}/><ellipse cx="158" cy="98" rx="8" ry="16" fill="${f.hc}" ${sk}/><path d="M76 52 Q100 44 124 52" fill="none" stroke="#fff" stroke-width="5" opacity=".5" stroke-linecap="round"/>`}
+  else if(f.hair==='cap'){front=fringe+`<path d="M36 84 Q38 30 100 28 Q162 30 164 84Z" fill="${f.cap}" ${sk}/><path d="M150 80 L192 88 L158 94Z" fill="${f.cap}" ${sk}/>`}
+  else front=fringe;
+  const earsS=ears?`<circle cx="38" cy="112" r="13" fill="${f.skin}" ${sk}/><circle cx="162" cy="112" r="13" fill="${f.skin}" ${sk}/>`:'';
+  const cheeks=mad?`<ellipse cx="68" cy="124" rx="12" ry="7" fill="#E8463A" opacity=".45"/><ellipse cx="132" cy="124" rx="12" ry="7" fill="#E8463A" opacity=".45"/>`
+    :happy?`<ellipse cx="68" cy="124" rx="11" ry="6" fill="#F28CA0" opacity=".45"/><ellipse cx="132" cy="124" rx="11" ry="6" fill="#F28CA0" opacity=".45"/>`:'';
+  const stache=f.stache?`<path d="M76 124 Q100 110 124 124 Q112 130 100 123 Q88 130 76 124Z" fill="${f.hair==='bald'||f.hair==='scarf'?'#5A3A22':f.hc}" ${sk} stroke-width="3"/>`:'';
+  const glasses=f.glasses?`<circle cx="80" cy="106" r="15" fill="#fff" fill-opacity=".25" ${sk} stroke-width="3.5"/><circle cx="120" cy="106" r="15" fill="#fff" fill-opacity=".25" ${sk} stroke-width="3.5"/><path d="M95 106 H105" ${sk} stroke-width="3.5"/>`:'';
+  return `<svg viewBox="0 0 200 230" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M24 232 Q28 170 100 164 Q172 170 176 232Z" fill="${f.shirt}" ${sk}/>
+    <path d="M84 166 L100 186 L116 166" fill="none" ${sk}/>
+    ${back}${earsS}
+    <circle cx="100" cy="110" r="62" fill="${f.skin}" ${sk}/>
+    ${front}${cheeks}
+    <path d="${bl}" fill="none" ${sk} stroke-width="5" stroke-linecap="round"/>
+    <path d="${br}" fill="none" ${sk} stroke-width="5" stroke-linecap="round"/>
+    <circle cx="80" cy="106" r="${mad?5:7}" fill="${INK}"/><circle cx="120" cy="106" r="${mad?5:7}" fill="${INK}"/>
+    <circle cx="82" cy="104" r="2" fill="#fff"/><circle cx="122" cy="104" r="2" fill="#fff"/>
+    <path d="M100 110 Q94 124 102 124" fill="none" ${sk} stroke-width="3.5" stroke-linecap="round"/>
+    ${stache}${mouth}${glasses}
+  </svg>`;
+}
+function itemSVG(icon,c,back){
+  const s=`stroke="${INK}" stroke-width="4" stroke-linejoin="round"`;
+  let g='', own=false;
+  switch(icon){
+    case 'phone': if(back){own=true;g=`<rect x="62" y="16" width="76" height="168" rx="16" fill="${c}" ${s}/><rect x="70" y="26" width="32" height="38" rx="9" fill="${INK}"/><circle cx="80" cy="37" r="6" fill="#5BB6E8"/><circle cx="92" cy="53" r="6" fill="#5BB6E8"/>`}
+      else g=`<rect x="62" y="16" width="76" height="168" rx="16" fill="${INK}"/><rect x="69" y="28" width="62" height="140" rx="8" fill="${c}"/><path d="M76 40 L104 40 L80 92Z" fill="#fff" opacity=".35"/><rect x="88" y="20" width="24" height="4" rx="2" fill="#56607A"/><rect x="138" y="54" width="5" height="24" rx="2" fill="${INK}"/>`;break;
+    case 'tablet': if(back){own=true;g=`<rect x="20" y="40" width="160" height="120" rx="14" fill="${c}" ${s}/><rect x="30" y="50" width="22" height="22" rx="6" fill="${INK}"/><circle cx="41" cy="61" r="5" fill="#5BB6E8"/>`}
+      else g=`<rect x="20" y="40" width="160" height="120" rx="14" fill="${INK}"/><rect x="28" y="48" width="144" height="104" rx="6" fill="${c}"/><path d="M36 56 L84 56 L40 112Z" fill="#fff" opacity=".3"/>`;break;
+    case 'console': g=`<rect x="22" y="66" width="156" height="66" rx="24" fill="${c}" ${s}/><circle cx="58" cy="99" r="13" fill="${INK}"/><circle cx="58" cy="99" r="5" fill="#C9CED6"/><circle cx="136" cy="86" r="6" fill="#E8463A" ${s} stroke-width="3"/><circle cx="150" cy="100" r="6" fill="#2FB383" ${s} stroke-width="3"/><circle cx="122" cy="100" r="6" fill="#5BB6E8" ${s} stroke-width="3"/><circle cx="136" cy="114" r="6" fill="#F2B630" ${s} stroke-width="3"/><rect x="84" y="80" width="32" height="8" rx="4" fill="${INK}"/>`;break;
+    case 'laptop': g=`<rect x="40" y="36" width="120" height="94" rx="8" fill="${INK}"/><rect x="48" y="44" width="104" height="78" rx="3" fill="${c}"/><path d="M54 50 L90 50 L58 96Z" fill="#fff" opacity=".3"/><path d="M20 134 H180 L168 160 H32Z" fill="#C9CED6" ${s}/><path d="M50 142 H150 M56 150 H144" stroke="${INK}" stroke-width="3" stroke-dasharray="6 4"/>`;break;
+    case 'watch': {let ticks='';for(let i=0;i<12;i++){const a=i*Math.PI/6;ticks+=`<path d="M${100+Math.sin(a)*42} ${116-Math.cos(a)*42} L${100+Math.sin(a)*48} ${116-Math.cos(a)*48}" stroke="${INK}" stroke-width="3"/>`}
+      g=`<path d="M100 40 Q60 10 30 34" fill="none" stroke="#B88A2C" stroke-width="5" stroke-dasharray="6 4"/><rect x="90" y="34" width="20" height="18" rx="4" fill="#E3B341" ${s}/><circle cx="100" cy="116" r="66" fill="${c}" ${s}/><circle cx="100" cy="116" r="52" fill="#FFF8EC" ${s}/>${ticks}<path d="M100 116 L100 80 M100 116 L124 128" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><circle cx="100" cy="116" r="5" fill="${INK}"/>`;break}
+    case 'vase': g=`<path d="M78 24 H122 V44 Q152 66 148 118 Q142 172 100 176 Q58 172 52 118 Q48 66 78 44Z" fill="${c}" ${s}/><path d="M58 96 Q100 78 142 96" fill="none" stroke="${INK}" stroke-width="3"/><circle cx="80" cy="128" r="10" fill="#E8463A" ${s} stroke-width="3"/><circle cx="104" cy="138" r="10" fill="#8E6CCF" ${s} stroke-width="3"/><circle cx="126" cy="124" r="10" fill="#F2B630" ${s} stroke-width="3"/>`;break;
+    case 'ewer': g=`<path d="M136 74 Q174 52 178 26" fill="none" stroke="${INK}" stroke-width="14" stroke-linecap="round"/><path d="M136 74 Q174 52 178 26" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/><path d="M60 84 Q24 94 40 140" fill="none" stroke="${INK}" stroke-width="9" stroke-linecap="round"/><rect x="86" y="30" width="28" height="38" fill="${c}" ${s}/><ellipse cx="100" cy="28" rx="22" ry="7" fill="${c}" ${s}/><ellipse cx="100" cy="122" rx="52" ry="56" fill="${c}" ${s}/><path d="M54 112 Q100 130 146 112" fill="none" stroke="${INK}" stroke-width="3"/><path d="M72 96 Q80 88 90 92" fill="none" stroke="#fff" stroke-width="4" opacity=".5"/>`;break;
+    case 'lamp': g=`<ellipse cx="100" cy="172" rx="46" ry="12" fill="${c}" ${s}/><path d="M70 170 Q60 132 100 126 Q140 132 130 170Z" fill="${c}" ${s}/><path d="M80 126 Q58 80 86 36 H114 Q142 80 120 126Z" fill="#DFF3FF" fill-opacity=".85" ${s}/><path d="M100 106 Q86 90 100 70 Q114 90 100 106Z" fill="#F28C28" stroke="${INK}" stroke-width="2"/>`;break;
+    case 'coin': own=back; g=`<circle cx="100" cy="100" r="74" fill="${c}" ${s}/><circle cx="100" cy="100" r="58" fill="none" stroke="${INK}" stroke-width="3" stroke-dasharray="4 5"/><text x="100" y="${back?112:118}" text-anchor="middle" font-family="Lilita One, sans-serif" font-size="${back?34:50}" fill="${INK}">${back?'1912':'25'}</text>${back?'':'<path d="M70 62 Q100 46 130 62" fill="none" stroke="'+INK+'" stroke-width="3"/>'}`;break;
+    case 'shoe': g=`<path d="M18 134 Q20 96 58 98 L92 70 Q112 64 120 84 Q140 104 176 110 Q188 114 186 134Z" fill="${c}" ${s}/><rect x="16" y="132" width="172" height="18" rx="9" fill="#FFF8EC" ${s}/><path d="M86 86 L100 98 M96 78 L110 90 M104 72 L118 82" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><path d="M62 118 Q100 102 150 120" fill="none" stroke="#FFF8EC" stroke-width="7" stroke-linecap="round"/>`;break;
+    case 'bag': g=`<path d="M68 84 Q66 30 100 30 Q134 30 132 84" fill="none" stroke="${INK}" stroke-width="10"/><path d="M36 80 H164 L176 172 H24Z" fill="${c}" ${s}/><path d="M36 80 Q100 122 164 80" fill="none" stroke="${INK}" stroke-width="3"/><rect x="88" y="98" width="24" height="18" rx="4" fill="#E3B341" ${s} stroke-width="3"/><path d="M34 160 H166" stroke="#fff" stroke-width="2" stroke-dasharray="5 4" opacity=".6"/>`;break;
+    case 'jacket': g=`<path d="M70 30 L100 50 L130 30 L170 50 L184 170 L152 170 L146 112 L146 182 H54 L54 112 L48 170 L16 170 L30 50Z" fill="${c}" ${s}/><path d="M100 50 V182" stroke="#E3C26A" stroke-width="4"/><path d="M70 30 L86 92 L100 50 M130 30 L114 92 L100 50" fill="none" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>`;break;
+    case 'coffee': g=`<rect x="50" y="22" width="100" height="152" rx="12" fill="${c}" ${s}/><rect x="62" y="36" width="76" height="30" rx="6" fill="${INK}"/><circle cx="80" cy="51" r="5" fill="#2FB383"/><circle cx="96" cy="51" r="5" fill="#E8463A"/><rect x="66" y="82" width="68" height="14" rx="4" fill="${INK}"/><path d="M78 118 H122 V148 Q122 158 112 158 H88 Q78 158 78 148Z" fill="#FFF8EC" ${s}/><rect x="56" y="162" width="88" height="8" fill="${INK}"/>`;break;
+    case 'vacuum': g=`<circle cx="100" cy="110" r="72" fill="${c}" ${s}/><circle cx="100" cy="110" r="46" fill="none" stroke="${INK}" stroke-width="3"/><circle cx="100" cy="62" r="13" fill="${INK}"/><circle cx="100" cy="110" r="10" fill="#2FB383" ${s} stroke-width="3"/>`;break;
+    case 'mixer': g=`<rect x="40" y="160" width="120" height="18" rx="8" fill="${c}" ${s}/><path d="M50 160 V60 Q50 34 80 34 H150 Q170 34 170 56 V82 H110 V160Z" fill="${c}" ${s}/><path d="M86 112 H156 Q150 158 121 158 Q92 158 86 112Z" fill="#C9CED6" ${s}/><path d="M120 82 V112" stroke="${INK}" stroke-width="5"/>`;break;
+    case 'airfryer': g=`<rect x="44" y="28" width="112" height="152" rx="30" fill="${c}" ${s}/><rect x="62" y="46" width="76" height="34" rx="8" fill="${INK}"/><text x="100" y="70" text-anchor="middle" font-size="18" fill="#2FB383" font-family="monospace">180°</text><rect x="54" y="100" width="92" height="64" rx="14" fill="none" stroke="${INK}" stroke-width="4"/><rect x="80" y="122" width="40" height="12" rx="6" fill="${INK}"/>`;break;
+    case 'bracelet': g=`<ellipse cx="100" cy="104" rx="72" ry="44" fill="none" stroke="${INK}" stroke-width="27"/><ellipse cx="100" cy="104" rx="72" ry="44" fill="none" stroke="${c}" stroke-width="18"/><path d="M48 86 Q100 62 152 86" fill="none" stroke="#fff" stroke-width="4" opacity=".6"/>`;break;
+    case 'band': g=`<circle cx="100" cy="112" r="56" fill="none" stroke="${INK}" stroke-width="26"/><circle cx="100" cy="112" r="56" fill="none" stroke="${c}" stroke-width="17"/><path d="M60 80 Q80 62 104 60" fill="none" stroke="#fff" stroke-width="4" opacity=".6"/>`;break;
+    case 'ring': g=`<circle cx="100" cy="124" r="48" fill="none" stroke="${INK}" stroke-width="20"/><circle cx="100" cy="124" r="48" fill="none" stroke="${c}" stroke-width="12"/><path d="M100 34 L126 58 L100 90 L74 58Z" fill="#DFF3FF" ${s}/><path d="M74 58 H126 M100 34 L90 58 L100 90 L110 58Z" fill="none" stroke="${INK}" stroke-width="2"/>`;break;
+    case 'necklace': g=`<path d="M30 24 Q100 172 170 24" fill="none" stroke="${INK}" stroke-width="10"/><path d="M30 24 Q100 172 170 24" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="7 4"/><path d="M100 118 Q120 142 100 172 Q80 142 100 118Z" fill="${c}" ${s}/>`;break;
+  }
+  const flip=back&&!own;
+  const sticker=back&&icon!=='coin'?`<rect x="72" y="122" width="56" height="28" rx="4" fill="#FFF8EC" ${s} stroke-width="3"/><path d="M80 131 H120 M80 141 H108" stroke="${INK}" stroke-width="3"/>`:'';
+  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g${flip?' transform="translate(200 0) scale(-1 1)"':''}>${g}</g>${sticker}</svg>`;
+}
+
+/* ---------- ses ---------- */
+let AC=null, musicOn=false, mStep=0, mNext=0, mTimer=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+const hz=n=>440*Math.pow(2,(n-69)/12);
+function tone(f,t,d,type='sine',v=.08,f2){const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.02)}
+function noise(t,d,v){const a=ac();if(!a)return;const b=a.createBuffer(1,a.sampleRate*d,a.sampleRate),dt=b.getChannelData(0);for(let i=0;i<dt.length;i++)dt[i]=(Math.random()*2-1)*(1-i/dt.length);const src=a.createBufferSource(),g=a.createGain(),hp=a.createBiquadFilter();hp.type='highpass';hp.frequency.value=7000;src.buffer=b;g.gain.value=v;src.connect(hp).connect(g).connect(a.destination);src.start(t)}
+function sfx(k){const a=ac();if(!a)return;const t=a.currentTime;
+  if(k==='coin'){tone(988,t,.09,'square',.05);tone(1319,t+.08,.25,'square',.05)}
+  else if(k==='angry'){tone(220,t,.4,'sawtooth',.06,90)}
+  else if(k==='click'){tone(660,t,.05,'triangle',.05)}
+  else if(k==='reveal'){tone(523,t,.08,'triangle',.06);tone(784,t+.07,.14,'triangle',.06)}
+  else if(k==='bad'){tone(330,t,.12,'square',.04);tone(262,t+.1,.2,'square',.04)}
+  else if(k==='siren'){for(let i=0;i<4;i++){tone(i%2?660:880,t+i*.22,.2,'square',.035)}}
+  else if(k==='bell'){tone(1568,t,.5,'sine',.07);tone(2093,t+.05,.6,'sine',.04)}
+  else if(k==='end'){[523,659,784,1047].forEach((n,i)=>tone(n,t+i*.12,.3,'square',.04))}
+}
+const CHORDS=[[60,64,67],[57,60,64],[53,57,60],[55,59,62]];
+const MEL=[72,null,74,76,null,74,72,null, 69,null,72,74,null,72,69,null, 69,72,null,77,76,null,74,null, 71,null,74,null,79,77,76,74];
+function musicSched(){const a=AC;if(!a||!musicOn)return;const sp=60/132/2;
+  while(mNext<a.currentTime+.2){const bar=Math.floor(mStep/8)%4,st=mStep%8,c=CHORDS[bar];
+    if(st===0||st===4)tone(hz(c[0]-24),mNext,.3,'triangle',.09);
+    if(st===2||st===6)tone(hz(c[2]-24),mNext,.2,'triangle',.07);
+    if(st%2===1)c.forEach(n=>tone(hz(n),mNext,.12,'square',.012));
+    const m=MEL[mStep%32];if(m)tone(hz(m),mNext,.18,'square',.022);
+    noise(mNext,.04,st%2?.05:.025);
+    mStep++;mNext+=sp}
+}
+function toggleMusic(){const a=ac();if(!a){toast('Bu tarayıcıda ses çalınamıyor.');return}
+  musicOn=!musicOn;$('#musicBtn').setAttribute('aria-pressed',musicOn);
+  if(musicOn){mNext=a.currentTime+.05;mTimer=setInterval(musicSched,60)}else{clearInterval(mTimer)}}
+
+/* ---------- arayüz ---------- */
+function toast(msg){const d=document.createElement('div');d.className='toast';d.textContent=msg;$('#toasts').appendChild(d);setTimeout(()=>d.remove(),3000)}
+function react(e){const el=$('#emoji');el.textContent=e;el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop')}
+function say(s){if(S.cust){S.cust.line=s;$('#bubble').textContent=s}}
+const moodColor=m=>m>=60?'#2FB383':m>=30?'#F2B630':'#E8463A';
+
+function renderHUD(){
+  const t=Math.max(0,Math.ceil(S.timeLeft));
+  $('#timer').textContent=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+  $('#timerBox').classList.toggle('low',t<=60);
+  $('#cash').textContent=fmt(S.cash);
+  $('#costs').textContent=fmt(S.costs);
+  $('#points').textContent=S.points;
+  const k=S.angry%3;[...$('#angryDots').children].forEach((d,i)=>d.classList.toggle('on',i<k));
+}
+function renderMood(){
+  const c=S.cust;const m=c?Math.max(0,c.mood):0;
+  const f=$('#moodFill');f.style.width=m+'%';f.style.background=moodColor(m);
+  const mm=$('#mMood');if(mm){mm.style.width=m+'%';mm.style.background=moodColor(m)}
+  if(c){const b=m>=60?2:m>=30?1:0;if(b!==c.bucket){c.bucket=b;$('#custFace').innerHTML=faceSVG(c.face,m)}}
+}
+function renderCustomer(entering){
+  const c=S.cust;
+  if(!c){$('#custFace').innerHTML='';$('#custName').textContent=S.running?'Sıradaki geliyor…':'Müşteri bekleniyor';$('#custType').hidden=true;$('#bubble').textContent=S.running?'…':'Dükkân kapalı.';}
+  else{
+    c.bucket=-1;renderMood();
+    const fe=$('#custFace');fe.classList.remove('leave','enter');if(entering){void fe.offsetWidth;fe.classList.add('enter')}
+    $('#custName').textContent=c.name;
+    const tb=$('#custType');tb.hidden=false;tb.textContent=TYPES[c.type].label;tb.style.background=TYPES[c.type].color;
+    $('#bubble').textContent=c.line||'';
+  }
+  renderMood();
+  $('#queue').innerHTML='<span>Sıra:</span>'+S.queue.map(q=>`<div class="q" title="${esc(q.name)}">${faceSVG(q.face,70)}</div>`).join('');
+}
+function renderItem(){
+  const c=S.cust, it=c&&c.item;
+  $('#itemArt').innerHTML=it?itemSVG(it.icon,it.color,false):'';
+  $('#itemCat').textContent=it?it.catLabel:'Tezgâh';
+  $('#itemName').textContent=it?it.name:'Tezgâh boş';
+  $('#itemClaim').textContent=it?(it.variant?'Beyan: '+it.variant:'Müşterinin ürünü'):'Müşteri geldiğinde ürünü buraya koyar.';
+  $('#askTag').hidden=!it;
+  $('#tScale').hidden=!(it&&it.metal);
+  $('#tPolice').hidden=!(c&&c.type==='supheci');
+  $('#expertCostTxt').textContent=fmt(T.expertCost())+' · kesin bilgi';
+  $('#scaleCostTxt').textContent=fmt(T.scaleCost())+' · gramajı ölç';
+  $('#prices').innerHTML=`Günün baz fiyatları: has altın <b>${fmt(PR.gold)}/g</b> · gümüş <b>${fmt(PR.silver)}/g</b> · pırlanta karatına göre artar.`;
+  renderAsk();renderButtons();
+}
+function renderAsk(){const c=S.cust;$('#askVal').textContent=c?fmt(c.ask):'—';$('#askTop').textContent=c?fmt(c.ask):'';}
+function renderButtons(){
+  const act=!!(S.cust&&S.cust.state==='active'&&S.running&&!S.paused), b=!!busy;
+  ['#tInspect','#tSearch','#tExpert','#tScale','#tPolice','#bOffer','#bHard','#bPass'].forEach(id=>$(id).disabled=!act||b);
+  document.querySelectorAll('.chip').forEach(x=>x.disabled=!act);
+}
+function addNote(id,text,kind,showable){const c=S.cust;if(!c||c.notes.some(n=>n.id===id))return;c.notes.push({id,text,kind,showable});renderNotes()}
+function renderNotes(){
+  const c=S.cust,el=$('#notes');
+  if(!c||!c.notes.length){el.innerHTML='<div class="empty">İnceleme, araştırma ve uzman bulguların buraya yazılır. Kırmızı bulguları müşteriye gösterip fiyatı düşürebilirsin.</div>';return}
+  el.innerHTML=c.notes.map(n=>`<div class="note ${n.kind}"><span class="dot"></span><div>${esc(n.text)}${n.showable&&!c.shown[n.id]&&c.state==='active'?`<br><button data-act="show" data-id="${n.id}">Müşteriye göster</button>`:''}${c.shown[n.id]?' <em>(gösterildi)</em>':''}</div></div>`).join('');
+  el.scrollTop=el.scrollHeight;
+}
+function renderInv(){
+  const el=$('#inv');
+  el.innerHTML='<b>Bugün alınanlar</b>'+(S.inv.length?S.inv.map(x=>`<div class="invItem">${itemSVG(x.item.icon,x.item.color)}<span>${esc(x.item.name)} · ${fmt(x.paid)}</span></div>`).join(''):'<span class="empty">Henüz bir şey almadın.</span>');
+}
+function setOffer(v){v=Math.max(0,Math.round(v/50)*50);$('#offerIn').value=v;$('#offerRange').value=v}
+function prepDeal(){const c=S.cust;if(!c)return;const r=$('#offerRange');r.max=r50(c.ask*1.2);setOffer(c.ask*.55)}
+function renderAll(){renderHUD();renderCustomer();renderItem();renderNotes();renderInv()}
+
+/* ---------- meşguliyet (oyun zamanıyla) ---------- */
+function startBusy(sec,label,done){busy={left:sec,total:sec,label,done};renderBusy();renderButtons();if(M)renderModal()}
+function renderBusy(){
+  ['','m'].forEach(p=>{const box=$('#'+(p?'mBusy':'busy'));if(!box)return;box.hidden=!busy;if(busy){$('#'+(p?'mBusyTxt':'busyTxt')).textContent=busy.label;$('#'+(p?'mBusyBar':'busyBar')).style.width=(100*(1-busy.left/busy.total))+'%'}});
+}
+
+/* ---------- akış ---------- */
+function spawnNext(){
+  while(S.queue.length<4)S.queue.push(newCustomer());
+  S.cust=S.queue.shift();S.queue.push(newCustomer());
+  S.cust.line=openingLine(S.cust);sfx('bell');
+  renderCustomer(true);renderItem();renderNotes();prepDeal();
+}
+function finishCustomer(){
+  const c=S.cust;if(!c)return;
+  closeModal();
+  $('#custFace').classList.add('leave');
+  S.gap=.9;
+}
+function leaveAngry(c){
+  c.state='leaving';c.leaveIn=1.6;c.mood=0;S.angry++;S.sat.push(0);
+  say(pick(LINES.leave));react('🤬');sfx('angry');
+  if(S.angry%3===0){S.points-=10;toast('3 müşteri sinirlendi: −10 puan!')}else toast(c.name+' sinirlenip dükkânı terk etti.');
+  closeModal();renderAll();
+}
+function moodHit(c,d){c.mood-=d;if(c.mood<=0){leaveAngry(c);return true}renderMood();return false}
+
+function accept(price){
+  const c=S.cust;
+  S.cash-=price;S.inv.push({item:c.item,paid:price,mood:c.mood});
+  const bonus=c.mood>=60?2:c.mood>=30?1:0;S.points+=bonus;S.sat.push(c.mood);
+  c.state='leaving';c.leaveIn=1.8;
+  say(pick(LINES.accept));react('🤝');sfx('coin');
+  toast(`${c.item.name} ${fmt(price)}’ye alındı`+(bonus?` · memnuniyet +${bonus}`:''));
+  closeModal();renderAll();
+}
+function offer(hard){
+  const c=S.cust;if(!c||c.state!=='active'||busy)return;
+  const o=Math.round(+$('#offerIn').value||0);
+  if(o<=0){toast('Önce bir teklif yaz.');return}
+  if(o>S.cash){toast('Kasada o kadar para yok!');return}
+  sfx('click');c.rounds++;
+  const t=TYPES[c.type];
+  if(o>=c.ask){accept(o);return}
+  const ratio=o/c.min;
+  if(hard){
+    if(ratio>=.92&&ch(c.type==='sinirli'?.5:.75)){accept(o);return}
+    if(moodHit(c,15+(1-Math.min(1,ratio))*t.sens*.8))return;
+    say(pick(['Son teklif mi? Benim de son sözüm '+fmt(c.ask)+'!','Bu tavırla anlaşamayız. '+fmt(c.ask)+'.']));react('😤');renderAsk();return;
+  }
+  if(ratio>=1){
+    if(c.type==='pazarlikci'&&c.rounds<3){c.ask=Math.max(r50(o*1.04),r50(c.ask-(c.ask-o)*.5));if(moodHit(c,2))return;say(fill(pick(LINES.haggle),c.ask));react('😏');renderAsk();return}
+    const p=Math.min(1,.55+(ratio-1)*3+c.rounds*.12);
+    if(ch(p)){accept(o);return}
+    c.ask=Math.max(r50(o+50),r50(c.ask-(c.ask-o)*.45));say(fill(pick(LINES.counter),c.ask));react('🤔');renderAsk();return;
+  }
+  const insult=1-ratio;
+  if(moodHit(c,4+insult*t.sens))return;
+  c.ask=Math.max(r50(c.min*1.03),r50(c.ask-(c.ask-o)*.3));
+  say(fill(pick(insult>.45?LINES.insult:LINES.counter),c.ask));react(insult>.45?'😠':'😐');renderAsk();
+}
+function pass(){
+  const c=S.cust;if(!c||c.state!=='active'||busy)return;
+  if(c.item.stolen){S.points+=3;S.declined++;toast('Şüpheli malı geri çevirdin (+3)')}
+  S.sat.push(c.mood);c.state='leaving';c.leaveIn=1.4;say(pick(LINES.pass));react('🙄');renderAll();
+}
+function showDefect(id){
+  const c=S.cust;if(!c||c.state!=='active'||c.shown[id])return;
+  c.shown[id]=1;sfx('click');
+  const n=c.notes.find(x=>x.id===id);
+  if(c.item.stolen&&n&&/kayıp|kazınmış|kilitli|envanter/i.test(n.text)){
+    if(ch(.5)){say('Ee… bir dakika, telefonum çalıyor!');react('😰');S.sat.push(c.mood);c.state='leaving';c.leaveIn=1.2;toast(c.name+' telaşla dükkândan çıktı. Polisi aramak için geç kaldın.');renderAll();return}
+    say('O… o eski bir etiket, önemli değil. Daha da inerim!');react('😰');c.min*=.7;c.ask=r50(c.ask*.75);renderAsk();renderNotes();return;
+  }
+  if(c.type==='bilgili'){c.min*=.95;c.ask=Math.max(r50(c.min*1.05),r50(c.ask*.95));if(moodHit(c,6))return;say(pick(LINES.defectKnow));react('🙄')}
+  else{const f=id==='expert'?.55:.68;c.min*=f;c.ask=Math.max(r50(c.min*1.08),r50(c.ask*f*1.05));if(moodHit(c,4))return;say(pick(LINES.defect));react('😳')}
+  renderAsk();renderNotes();
+}
+
+/* ---------- modallar ---------- */
+function openModal(kind){M={kind,back:false,zoom:1,msg:'',scale:{phase:'idle',angle:0,t0:0}};renderModal();$('#modalWrap').hidden=false}
+function closeModal(){if(M&&M.raf)cancelAnimationFrame(M.raf);M=null;$('#modalWrap').hidden=true}
+function renderModal(){
+  if(!M||!S.cust)return;
+  const c=S.cust,it=c.item,body=$('#mBody');
+  renderMood();renderBusy();
+  if(M.kind==='inspect'){
+    $('#mTitle').textContent='Ürünü incele';
+    const idx=M.back?[2]:[0,1];
+    const spots=idx.map(i=>{const s=it.spots[i];return `<button class="spot ${s.small?'small':''} ${s.rev?'rev '+(s.kind==='bad'?'bad':s.kind==='rare'?'rare':''):''}" style="left:${s.x}%;top:${s.y}%" data-act="spot" data-i="${i}" title="${esc(s.label)}" ${busy?'disabled':''}>${s.rev?(s.kind==='bad'?'!':s.kind==='rare'?'★':'✓'):'?'}</button>`}).join('');
+    body.innerHTML=`<div class="stage"><div class="zoomer" id="zoomer" style="transform:scale(${M.zoom})"><div class="flip">${itemSVG(it.icon,it.color,M.back)}</div>${spots}</div></div>
+      <div class="ctrl"><button class="btn" data-act="flip" ${busy?'disabled':''}>↻ ${M.back?'Öne çevir':'Arkasını çevir'}</button>
+      <label for="zoomR">Büyüt <input type="range" id="zoomR" min="1" max="2.4" step="0.1" value="${M.zoom}"></label></div>
+      <div class="clueBox">${esc(M.msg||(M.back?'Arka yüzdeki küçük ayrıntıyı okumak için en az 1,6× büyüt.':'Sarı noktalara tıkla. Her inceleme zaman alır, müşteri bekler.'))}</div>`;
+  }
+  else if(M.kind==='search'){
+    $('#mTitle').textContent='İnternette araştır';
+    body.innerHTML=`<div class="searchbar"><div>🔎 ${esc(it.search)}</div><button class="btn go" style="grid-column:auto" data-act="doSearch" ${c.research||busy?'disabled':''}>Ara</button></div>`+
+      (c.research?`<div class="results">${c.research.map(r=>`<div class="res"><div class="url ${r.ok?'':'warn'}">${r.ok?'🔒 https://':'⚠ http://'}${esc(r.url)}</div><h4>${esc(r.title)}</h4><p>${esc(r.snip)}</p></div>`).join('')}</div>
+      <p class="empty">İpucu: güvenilir siteler bilgi verir, sahte siteler bağırır. Fiyat aralığı orijinal ve sağlam ürün içindir.</p>`:'<p class="empty">Aramayı başlat. Sonuçlar bir kez yüklenir, tekrar bakmak bedava.</p>');
+  }
+  else if(M.kind==='expert'){
+    $('#mTitle').textContent='Uzman çağır';
+    if(c.expert)body.innerHTML=`<div class="report">${c.expert.map(r=>`<div><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div><p class="empty">Rapor not defterine yazıldı. Sorun varsa müşteriye gösterebilirsin.</p>`;
+    else body.innerHTML=`<p>Eksper ürünün orijinalliğini, çalışırlığını ve gerçek piyasa değerini söyler. Ücreti gün sonunda kârından düşülür.</p>
+      <div class="report"><div><span>Ücret</span><b>${fmt(T.expertCost())}</b></div><div><span>Gelme süresi</span><b>${String(T.expertTime()).replace('.',',')} sn</b></div></div>
+      <div class="center"><button class="btn go" style="grid-column:auto;padding-inline:28px" data-act="doExpert" ${busy?'disabled':''}>Eksperi çağır</button></div>`;
+  }
+  else if(M.kind==='scale'){
+    $('#mTitle').textContent='Hassas tartı';
+    const m=it.metal, sc=M.scale, z=T.zone();
+    const arc=(a1,a2,r)=>{const p=a=>[100+r*Math.sin(a*Math.PI/180),110-r*Math.cos(a*Math.PI/180)];const[x1,y1]=p(a1),[x2,y2]=p(a2);return `M${x1} ${y1} A${r} ${r} 0 0 1 ${x2} ${y2}`};
+    body.innerHTML=`<p>Beyan: <b>${String(m.claimed).replace('.',',')} ${m.unit}</b> · ${esc(m.kl)}. İbre yeşil bölgedeyken <b>Oku</b>’ya bas; dışarıdayken okuma hatalı olur.</p>
+      <svg class="dial" viewBox="0 0 200 130"><path d="${arc(-80,80,80)}" fill="none" stroke="${INK}" stroke-width="18" stroke-linecap="round"/><path d="${arc(-80,80,80)}" fill="none" stroke="#F5E9CF" stroke-width="12" stroke-linecap="round"/>
+      <path d="${arc(-z,z,80)}" fill="none" stroke="#2FB383" stroke-width="12"/>
+      <g id="needle" transform="rotate(${sc.angle} 100 110)"><path d="M100 110 L100 34" stroke="#E8463A" stroke-width="5" stroke-linecap="round"/></g><circle cx="100" cy="110" r="9" fill="${INK}"/>
+      <rect x="40" y="116" width="120" height="12" rx="4" fill="#C9CED6" stroke="${INK}" stroke-width="3"/></svg>
+      <div class="reading num" id="reading">${c.scale?String(c.scale.reading).replace('.',',')+' '+m.unit:'— '+m.unit}</div>
+      <div class="center">${sc.phase==='idle'?`<button class="btn go" style="grid-column:auto" data-act="scalePut" ${busy||c.scale?'disabled':''}>Teraziye koy (${fmt(T.scaleCost())})</button>`:''}
+      ${sc.phase==='swing'?`<button class="btn hard" data-act="scaleRead">Oku!</button>`:''}</div>
+      ${c.scale?`<div class="clueBox">${esc(c.scale.calc)}</div>`:''}`;
+    if(sc.phase==='swing')swing();
+  }
+  else if(M.kind==='police'){
+    $('#mTitle').textContent='Polise bildir';
+    body.innerHTML=`<p>Cihazın çalıntı olduğundan emin misin? Doğruysa <b>+15 puan</b>. Yanlış alarm olursa <b>−10 puan</b> ve müşteri sinirlenir.</p>
+      <div class="center"><button class="btn" data-act="closeModal">Vazgeç</button><button class="btn hard" data-act="doPolice" ${busy?'disabled':''}>Evet, polisi ara</button></div>`;
+  }
+}
+function revealSpot(i){
+  const c=S.cust,s=c.item.spots[i];
+  if(s.rev){M.msg=s.label+': '+s.text;renderModal();return}
+  if(s.small&&M.zoom<1.6){M.msg='Çok küçük, okuyamıyorsun. En az 1,6× büyüt.';renderModal();return}
+  startBusy(T.inspect(),s.label+' inceleniyor…',()=>{
+    s.rev=true;sfx(s.kind==='bad'?'bad':'reveal');
+    if(M&&M.kind==='inspect')M.msg=s.label+': '+s.text;
+    addNote('spot'+i,s.label+': '+s.text,s.kind,s.kind==='bad');
+    c.mood-=1;
+  });
+}
+function genResults(it){
+  const res=[], q=it.search;
+  if(it.metal){
+    const m=it.metal;
+    if(m.type==='diamond'){
+      res.push({ok:true,url:'kuyumcurehberi.com.tr/pirlanta',title:'Pırlanta fiyat rehberi (renk/berraklık ortalaması)',snip:`0,25 ct ≈ ${fmt(.25*(35000+50000*.25))} · 0,5 ct ≈ ${fmt(.5*(35000+50000*.5))} · 1 ct ≈ ${fmt(85000)}. Montür ayrıca hesaplanır.`});
+      res.push({ok:true,url:'forum.taskoleksiyon.org',title:'Zirkon mu pırlanta mı? 5 basit kontrol',snip:'Zirkon gökkuşağı gibi aşırı renkli ışık saçar, kolay çizilir; montür içinde "CZ" yazabilir.'});
+    }else{
+      const base=m.type==='silver'?PR.silver:PR.gold;
+      res.push({ok:true,url:'piyasaekrani.com.tr/altin',title:`${m.type==='silver'?'Gümüş':'Has altın'} gram fiyatı — bugün`,snip:`${m.type==='silver'?'Gümüş':'24 ayar'}: ${fmt(base)}/g. ${m.kl}: ${fmt(base*m.pur)}/g. Hurda alımda %3–10 kesinti uygulanır.`});
+      res.push({ok:true,url:'kuyumcurehberi.com.tr/kaplama',title:'Kaplama takıyı nasıl anlarsınız?',snip:'Damga silik ya da yamuksa, kenarlarda bakır rengi görünüyorsa kaplamadır. Tartı ve ayar testi şarttır.'});
+    }
+    res.push({ok:false,url:'ALTIN-BOZDUR-HEMEN.click',title:'!!! GRAMI '+fmt(PR.gold*R(1.6,2.2))+' ALIYORUZ !!! HEMEN ARA',snip:'Piyasanın 2 katı! Sadece bugün! Kimlik gerekmez!!!'});
+    res.push({ok:false,url:'ucuzmucuz-takilar.xyz',title:'Takılar %80 indirimde, gram sadece '+fmt(PR.gold*.3),snip:'%100 orijinal garantili, stoklar tükeniyor.'});
+    return shuffle(res);
+  }
+  const mv=it.market;
+  res.push({ok:true,url:'ikincielendeksi.com.tr',title:`${q} — 2. el fiyat geçmişi`,snip:`Son 30 günde ${Math.floor(R(40,260))} ilan. Ortalama ${fmt(mv*R(.96,1.04))}, aralık ${fmt(mv*.85)} – ${fmt(mv*1.12)}.`});
+  res.push({ok:true,url:'pazarbak.net/'+it.cat,title:`${it.name} kaça satılır?`,snip:`Temiz ve orijinal ürünler ${fmt(mv*.9)} civarında el değiştiriyor. Arızalılar yarı fiyatın altına düşer.`});
+  res.push({ok:false,url:'MEGA-FIRSAT-24.biz',title:`!!! ${q.toUpperCase()} ${fmt(mv*R(2.2,3))}’YE ALIYORUZ !!!`,snip:'Piyasanın en yüksek fiyatı! Kargo bedava! Hemen ara, kaçırma!!!'});
+  res.push({ok:false,url:'ucuzmucuz-kampanya.xyz',title:`${q} sadece ${fmt(mv*R(.2,.35))}`,snip:'%100 orijinal garantili, son 3 ürün. Kapıda ödeme yok.'});
+  if(it.fake&&ch(.7)&&it.tip)res.push({ok:true,url:'forum.koleksiyonerler.org',title:`${it.name}: taklitlere dikkat!`,snip:'Bu serinin taklidi çok yaygın. Kontrol: '+it.tip+'.'});
+  if(it.electronic&&it.stolen&&ch(.75))res.push({ok:true,url:'cihazsorgu.gov.tr (resmî kayıt)',title:'Seri no / IMEI sorgu sonucu',snip:'Bu cihaz için KAYIP/ÇALINTI bildirimi bulunuyor.'});
+  if(it.electronic&&!it.stolen&&S.cust.type==='supheci'&&ch(.75))res.push({ok:true,url:'cihazsorgu.gov.tr (resmî kayıt)',title:'Seri no / IMEI sorgu sonucu',snip:'Kayıt temiz. Herhangi bir kayıp/çalıntı bildirimi yok.'});
+  if(it.rare&&ch(.6))res.push({ok:true,url:'forum.koleksiyonerler.org',title:'Sınırlı seri ve hatalı basımlar',snip:'Numaralı ya da hatalı basım parçalar normal fiyatın 3–5 katına alıcı buluyor.'});
+  return shuffle(res);
+}
+function swing(){
+  const sc=M.scale;
+  const loop=now=>{if(!M||M.kind!=='scale'||sc.phase!=='swing')return;
+    const t=(now-sc.t0)/1000;
+    sc.angle=70*Math.sin(t*3.1)*Math.exp(-t*.32)+Math.sin(t*9.7)*4+Math.sin(t*2.3)*5;
+    const n=document.getElementById('needle');if(n)n.setAttribute('transform',`rotate(${sc.angle.toFixed(1)} 100 110)`);
+    const it=S.cust.item,fake=it.metal.amt*(1+sc.angle/90*T.err()*2);const rd=document.getElementById('reading');
+    if(rd)rd.textContent=fake.toFixed(it.metal.unit==='ct'?2:1).replace('.',',')+' '+it.metal.unit;
+    M.raf=requestAnimationFrame(loop)};
+  if(M.raf)cancelAnimationFrame(M.raf);M.raf=requestAnimationFrame(loop);
+}
+function scaleRead(){
+  const c=S.cust,m=c.item.metal,sc=M.scale;sc.phase='done';if(M.raf)cancelAnimationFrame(M.raf);
+  const inZone=Math.abs(sc.angle)<=T.zone();
+  const err=inZone?R(-.01,.01):sc.angle/90*T.err();
+  const reading=+(m.amt*(1+err)).toFixed(m.unit==='ct'?2:1);
+  const val=metalValue(m.type,reading,m.pur);
+  const calc=m.type==='diamond'?`Taş ${String(reading).replace('.',',')} ct → pırlantaysa yaklaşık ${fmt(val)} (montür dahil).`
+    :`${String(reading).replace('.',',')} g × ${m.pur} (${m.kl}) × ${fmt(m.type==='silver'?PR.silver:PR.gold)}/g = ${fmt(reading*m.pur*(m.type==='silver'?PR.silver:PR.gold))} baz değer (hurda kesintisi hariç).`;
+  c.scale={reading,calc};
+  sfx(inZone?'reveal':'bad');
+  if(!inZone)toast('İbre oynarken okudun, sonuç şaşmış olabilir.');
+  const low=reading<m.claimed*.95;
+  addNote('scale',`Tartı: ${String(reading).replace('.',',')} ${m.unit} (beyan ${String(m.claimed).replace('.',',')} ${m.unit}). ${calc}`,low?'bad':'info',low);
+  renderModal();
+}
+
+/* ---------- eylemler ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+  const a=b.dataset.act;
+  switch(a){
+    case 'music':toggleMusic();break;
+    case 'pause':if(S&&S.running)setPause(!S.paused);break;
+    case 'inspect':openModal('inspect');break;
+    case 'search':openModal('search');break;
+    case 'expert':openModal('expert');break;
+    case 'scale':openModal('scale');break;
+    case 'police':openModal('police');break;
+    case 'closeModal':closeModal();break;
+    case 'flip':M.back=!M.back;M.msg='';sfx('click');renderModal();break;
+    case 'spot':revealSpot(+b.dataset.i);break;
+    case 'doSearch':startBusy(T.research(),'Sayfalar yükleniyor…',()=>{S.cust.research=genResults(S.cust.item);sfx('reveal');addNote('search','İnternette araştırdın. Sonuçlar 🌐 Araştır penceresinde.','info',false)});break;
+    case 'doExpert':{const c=S.cust,it=c.item;S.costs+=T.expertCost();renderHUD();
+      startBusy(T.expertTime(),'Eksper yolda…',()=>{
+        const rows=[];
+        if(it.metal){rows.push(['Gerçek miktar',String(it.metal.amt).replace('.',',')+' '+it.metal.unit]);rows.push(['Malzeme',it.fake?(it.metal.type==='diamond'?'ZİRKON taş':'KAPLAMA, değersiz'):'Gerçek, '+it.metal.kl])}
+        else{rows.push(['Orijinallik',it.fake?'SAHTE / REPLİKA':'Orijinal']);rows.push(['Durum',it.broken?'Kusurlu / arızalı':'Sağlam'])}
+        if(it.electronic)rows.push(['Kayıt sorgusu',it.stolen?'ÇALINTI KAYDI VAR!':'Temiz']);
+        if(it.rare)rows.push(['Not','Nadir parça! Koleksiyon değeri yüksek.']);
+        rows.push(['Gerçek değer',fmt(it.value)]);
+        c.expert=rows;sfx(it.fake||it.broken||it.stolen?'bad':'reveal');
+        const issue=it.fake||it.broken||it.stolen||(it.metal&&it.metal.claimed>it.metal.amt*1.05);
+        addNote('expert','Eksper: '+rows.map(r=>r[0]+' '+r[1]).join(' · '),issue?'bad':it.rare?'rare':'good',!!issue);
+      })}break;
+    case 'scalePut':S.costs+=T.scaleCost();renderHUD();M.scale.phase='swing';M.scale.t0=performance.now();sfx('click');renderModal();break;
+    case 'scaleRead':scaleRead();break;
+    case 'doPolice':{const c=S.cust;closeModal();sfx('siren');
+      startBusy(2,'Polis aranıyor…',()=>{
+        if(c!==S.cust)return;
+        if(c.item.stolen){S.points+=15;S.police.ok++;say('Ne? Hayır, ben… tamam, tamam!');react('😱');toast('Doğru karar! Cihaz çalıntıymış, sahibine iade edildi (+15)');S.sat.push(50);c.state='leaving';c.leaveIn=1.6;renderAll()}
+        else{S.points-=10;S.police.bad++;toast('Yanlış alarm! Cihaz temiz çıktı (−10)');leaveAngry(c)}
+      })}break;
+    case 'pct':if(S.cust)setOffer(S.cust.ask*(+b.dataset.p));break;
+    case 'offer':offer(false);break;
+    case 'hard':offer(true);break;
+    case 'pass':pass();break;
+    case 'show':showDefect(b.dataset.id);break;
+    case 'start':startRound();break;
+    case 'buy':buyUpg(b.dataset.id);break;
+    case 'home':showStart();break;
+    case 'resume':setPause(false);break;
+    case 'quit':setPause(false);endRound(true);break;
+    case 'reset':P={day:1,vault:0,best:0,up:{}};save();showStart();toast('İlerleme sıfırlandı.');break;
+  }
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='offerRange')$('#offerIn').value=e.target.value;
+  if(e.target.id==='offerIn')$('#offerRange').value=e.target.value;
+  if(e.target.id==='zoomR'&&M){M.zoom=+e.target.value;const z=$('#zoomer');if(z)z.style.transform=`scale(${M.zoom})`}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.id==='offerIn'){e.preventDefault();offer(false)}
+  if(e.key==='Escape'&&M)closeModal();
+});
+
+/* ---------- döngü ---------- */
+let last=performance.now();
+setInterval(()=>{
+  const now=performance.now();const dt=Math.min(.25,(now-last)/1000);last=now;
+  if(!S||!S.running||S.paused)return;
+  S.timeLeft-=dt;S.elapsed+=dt;
+  if(busy){busy.left-=dt;if(busy.left<=0){const d=busy.done;busy=null;d();renderBusy();renderButtons();if(M)renderModal();}else renderBusy()}
+  const c=S.cust;
+  if(c){
+    if(c.state==='active'){
+      const mult=(1+.12*(S.day-1))*(up('cay')?.7:1);
+      c.mood-=TYPES[c.type].decay*mult*dt;
+      if(c.mood<=0)leaveAngry(c);else renderMood();
+    }else if(c.state==='leaving'){c.leaveIn-=dt;if(c.leaveIn<=0){c.state='gone';finishCustomer()}}
+    else if(c.state==='gone'){S.gap-=dt;if(S.gap<=0){S.cust=null;spawnNext()}}
+  }
+  renderHUD();
+  if(S.timeLeft<=0)endRound(false);
+},100);
+
+function setPause(p){
+  S.paused=p;
+  if(p){$('#screen').hidden=false;$('#screen').innerHTML=`<div class="screenIn pauseCard"><h1 class="title" style="font-size:56px">Mola</h1><div class="pane"><p>Süre durdu, müşteri seni bekliyor.</p><div class="center"><button class="btn big" data-act="resume">Devam et</button><button class="btn" data-act="quit">Günü bitir</button></div></div></div>`}
+  else{$('#screen').hidden=true}
+  renderButtons();
+}
+
+/* ---------- tur başlat / bitir ---------- */
+function startRound(){
+  const sec=+($('#durSel')?$('#durSel').value:600);
+  ac();
+  S=newState(sec);S.running=true;busy=null;closeModal();
+  $('#screen').hidden=true;
+  for(let i=0;i<3;i++)S.queue.push(newCustomer());
+  spawnNext();renderAll();
+  toast(`Gün ${P.day} başladı! Başlangıç bütçesi ${fmt(S.startCash)}.`);
+}
+function endRound(early){
+  if(!S.running)return;
+  S.running=false;busy=null;closeModal();sfx('end');
+  let profit=0,stolenN=0;const rows=S.inv.map(x=>{
+    const it=x.item;let res,val=it.value;
+    if(it.stolen){val=0;stolenN++;res='El konuldu (çalıntı)'}
+    else if(it.fake)res='Sahte çıktı';else if(it.broken)res='Kusurlu';else if(it.rare)res='Nadir parça!';else res='Sağlam';
+    const p=val-x.paid;profit+=p;return {it,paid:x.paid,val,p,res}});
+  const stolenPen=stolenN*20;S.points-=stolenPen;
+  profit-=S.costs;
+  const sat=S.sat.length?Math.round(S.sat.reduce((a,b)=>a+Math.max(0,b),0)/S.sat.length):0;
+  const score=S.points+Math.floor(profit/1000);
+  const stars=score>=60?3:score>=30?2:score>=10?1:0;
+  P.vault+=Math.max(0,profit);
+  if(score>P.best)P.best=score;
+  const playedDay=P.day;P.day++;save();
+  $('#screen').hidden=false;
+  $('#screen').innerHTML=`<div class="screenIn">
+    <h1 class="title">Gün ${playedDay} kapandı</h1>
+    <div class="stars" aria-label="${stars} yıldız">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
+    <div class="bigStats">
+      <div class="stat"><small>Net kâr</small><b class="${profit>=0?'pos':'neg'}">${fmt(profit)}</b></div>
+      <div class="stat"><small>Puan</small><b>${S.points}</b></div>
+      <div class="stat"><small>Toplam skor</small><b>${score}</b></div>
+      <div class="stat"><small>Memnuniyet</small><b>%${sat}</b></div>
+    </div>
+    <div class="pane"><h2>Satış raporu</h2>
+      ${rows.length?`<div class="tableWrap"><table><thead><tr><th>Ürün</th><th>Sonuç</th><th class="r">Ödenen</th><th class="r">Gerçek değer</th><th class="r">Kâr/zarar</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr><td>${esc(r.it.name)}${r.it.variant?' <span class="empty">('+esc(r.it.variant)+')</span>':''}</td><td>${esc(r.res)}</td><td class="r">${fmt(r.paid)}</td><td class="r">${fmt(r.val)}</td><td class="r ${r.p>=0?'pos':'neg'}">${r.p>=0?'+':''}${fmt(r.p)}</td></tr>`).join('')}
+      <tr><td colspan="4">Uzman ve tartı masrafları</td><td class="r neg">−${fmt(S.costs)}</td></tr></tbody></table></div>`:'<p class="empty">Bugün hiçbir şey almadın.</p>'}
+      <p class="empty">Puan dökümü: memnun müşteri bonusları, polis kararları (doğru ${S.police.ok}, yanlış ${S.police.bad}), geri çevrilen şüpheli mal ${S.declined}, sinirlenen müşteri ${S.angry}${stolenN?`, çalıntı mal cezası −${stolenPen}`:''}. Skor = puan + her 1.000 ₺ kâr için 1.</p>
+    </div>
+    <div class="startRow"><button class="btn big" data-act="home">Dükkâna dön</button><span class="vault">Dükkân kasası: ${fmt(P.vault)}</span></div>
+  </div>`;
+  $('#screen').scrollTop=0;
+  renderAll();
+}
+function buyUpg(id){const u=UPG.find(x=>x.id===id);if(!u||P.up[id])return;if(P.vault<u.cost){toast('Kasada yeterli birikim yok.');return}P.vault-=u.cost;P.up[id]=1;save();sfx('coin');toast(u.name+' alındı!');showStart()}
+function showStart(){
+  const sc=$('#screen');sc.hidden=false;
+  const demo={skin:'#E8B48A',hc:'#2B1D14',hair:'short',shirt:'#E8463A',stache:true,glasses:false,cap:'#5BB6E8'};
+  const cats=unlocked().map(k=>CATS[k].label).join(', ');
+  sc.innerHTML=`<div class="screenIn">
+    <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:12px;min-width:0;flex:1 1 320px">
+        <h1 class="title">İkinci El Kaosu</h1>
+        <div class="tagPrice dayTag"><small>BUGÜN</small>Gün ${P.day}</div>
+      </div>
+      <div style="width:min(200px,45%)">${faceSVG(demo,80)}</div>
+    </div>
+    <div class="cols">
+      <div class="pane howto"><h2>Nasıl oynanır</h2>
+        <ol>
+          <li>Müşteriler sırayla gelir, ürününü ve istediği fiyatı söyler. Sabır barı sürekli azalır.</li>
+          <li><b>İncele</b>: ürünü çevir, büyüt, noktalara tıkla. <b>Araştır</b>: sahte sitelere kanma. <b>Uzman</b>: hızlı ve kesin ama ücretli.</li>
+          <li>Değerli metalleri <b>tart</b>: ibre yeşildeyken oku, gramaj × ayar × baz fiyat.</li>
+          <li>Teklif ver. Çok düşük teklif müşteriyi kızdırır; kırmızı bulguları gösterirsen fiyat iner.</li>
+          <li><b>Şüpheci</b> müşteri şifresiz cihaz getirir: polise bildir, geri çevir ya da riske gir. Çalıntı mal −20 puan.</li>
+          <li>3 müşteri sinirlenirse −10 puan. Gün sonunda aldıkların gerçek değerinden satılır.</li>
+        </ol>
+        <p class="empty">Açık kategoriler: ${cats}. ${NEXT_UNLOCK[P.day]||'Her gün sahte ürünler artıyor, müşteriler sabırsızlaşıyor.'}</p>
+      </div>
+      <div class="pane"><h2>Dükkân geliştirmeleri</h2>
+        <div class="vault">Kasa: ${fmt(P.vault)}</div>
+        <div class="upg">${UPG.map(u=>`<div class="upgItem ${P.up[u.id]?'own':''}"><div><b>${u.name}</b><span>${u.desc}</span></div>${P.up[u.id]?'<span><b>Alındı</b></span>':`<button class="btn" data-act="buy" data-id="${u.id}" ${P.vault<u.cost?'disabled':''}>${fmt(u.cost)}</button>`}</div>`).join('')}</div>
+        <p class="empty">Gün sonundaki kârın kasaya eklenir. En iyi skor: ${P.best}.</p>
+      </div>
+    </div>
+    <div class="startRow">
+      <button class="btn big" data-act="start">Dükkânı aç</button>
+      <label for="durSel" style="font-weight:700">Tur süresi
+        <select id="durSel"><option value="600" selected>10 dakika</option><option value="300">5 dakika</option><option value="180">3 dakika (deneme)</option></select></label>
+      <button class="iconbtn" data-act="music" aria-pressed="${musicOn}">♪ Müzik</button>
+      ${P.day>1||P.vault>0?'<button class="btn" data-act="reset">İlerlemeyi sıfırla</button>':''}
+    </div>
+  </div>`;
+  sc.scrollTop=0;
+}
+
+/* ilk çizim */
+S=newState(600);renderAll();showStart();
+</script>
+</body>
+</html>
